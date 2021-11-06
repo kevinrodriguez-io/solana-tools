@@ -41,6 +41,26 @@ export const CandyMachineHolderList = ({
     ...new Set(data.map((holder) => holder.ownerWallet.toBase58())),
   ];
 
+  const holdersDownloadString =
+    'data:text/json;charset=utf-8,' +
+    encodeURIComponent(
+        JSON.stringify(
+          data.map(
+            ({
+              associatedTokenAddress,
+              metadataAccount,
+              mintAccount,
+              ownerWallet,
+            }) => ({
+              associatedTokenAddress: associatedTokenAddress.toBase58(),
+              metadataAccount: metadataAccount.toBase58(),
+              mintAccount: mintAccount.toBase58(),
+              ownerWallet: ownerWallet.toBase58(),
+            }),
+          ),
+        ),
+    );
+
   return (
     <div className="flex flex-col">
       <pre className="flex bg-gray-800 text-white max-h-96 overflow-scroll mt-4 p-4 shadow-md rounded-md">
@@ -67,7 +87,18 @@ export const CandyMachineHolderList = ({
           <b>Total:</b> {data.length} Tokens&nbsp;|&nbsp;
         </div>
         <div className="">
-          <b>Unique Holders:</b> {uniqueHolders.length}
+          <b>Unique Holders:</b> {uniqueHolders.length}&nbsp;|&nbsp;
+        </div>
+        <div className="">
+          <a
+            className="text-pink-700 hover:text-pink-500 cursor-pointer"
+            href={holdersDownloadString}
+            rel="noopener noreferrer"
+            download={`${candyMachinePrimaryKey}-holders.json`}
+            target="_blank"
+          >
+            Download JSON Snapshot
+          </a>
         </div>
       </div>
     </div>

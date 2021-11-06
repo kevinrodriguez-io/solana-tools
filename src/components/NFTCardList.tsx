@@ -42,6 +42,11 @@ export const NFTCardList: FC = () => {
             <NFTCard key={nft.mint.toString()} nftData={nft.data} />
           ))}
         </div>
+        <div className="flex flex-row mt-4">
+          <div className="">
+            <b>Total:</b> {data.length} NFTs&nbsp;|&nbsp;
+          </div>
+        </div>
       </div>
     </div>
   );
