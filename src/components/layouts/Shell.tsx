@@ -1,10 +1,6 @@
 import { FC, Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import {
-  MenuAlt2Icon,
-  VariableIcon,
-  XIcon,
-} from '@heroicons/react/outline';
+import { MenuAlt2Icon, VariableIcon, XIcon } from '@heroicons/react/outline';
 import classNames from 'classnames';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
@@ -71,7 +67,7 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
                 <div className="flex-shrink-0 flex items-center px-4">
                   <img
                     className="h-8 w-auto"
-                    src="https://tailwindui.com/img/logos/workflow-logo-indigo-500-mark-white-text.svg"
+                    src="/moonbox-logo.png"
                     alt="Workflow"
                   />
                 </div>
@@ -115,11 +111,9 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
           {/* Sidebar component, swap this element with another sidebar if you like */}
           <div className="flex-1 flex flex-col min-h-0 bg-gray-800">
             <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900">
-              <img
-                className="h-8 w-auto"
-                src="https://tailwindui.com/img/logos/workflow-logo-indigo-500-mark-white-text.svg"
-                alt="Workflow"
-              />
+              <p className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-400 to-purple-600">
+                Solana Moon Box
+              </p>
             </div>
             <div className="flex-1 flex flex-col overflow-y-auto">
               <nav className="flex-1 px-2 py-4 space-y-1">
