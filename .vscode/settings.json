@@ -3,6 +3,7 @@
         "borsh",
         "headlessui",
         "heroicons",
+        "memcmp",
         "Randropper",
         "Solflare",
         "Sollet"

@@ -1,29 +1,39 @@
-import { useWallet } from '@solana/wallet-adapter-react';
-import { Metadata } from 'lib/metaplex-sdk/types';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { useNFTs } from 'hooks/useNFTs';
+import { trimString } from 'lib/string/trimString';
 import { FC } from 'react';
 import { NFTCard } from './NFTCard';
+import { Skeleton } from './Skeleton';
 
-// Create a function that trims a large string and adds ... in the middle
-const trimString = (str: string, maxLength: number) => {
-  if (str.length <= maxLength) {
-    return str;
-  }
-  const trimmedString =
-    str.substr(0, maxLength / 2) +
-    '...' +
-    str.substr(str.length - maxLength / 2);
-  return trimmedString;
-};
-
-type NFTCardListProps = {
-  nfts: Metadata[];
-};
-
-export const NFTCardList: FC<NFTCardListProps> = ({ nfts }) => {
+export const NFTCardList: FC = () => {
   const { publicKey } = useWallet();
+  const { connection } = useConnection();
+  const { data, error } = useNFTs(publicKey!, connection);
+  const isLoading = !data && !error;
+  const isError = error;
+  const isEmpty = !data || data.length === 0;
+
+  if (isLoading) {
+    return (
+      <>
+        <Skeleton />
+        <Skeleton />
+        <Skeleton />
+      </>
+    );
+  }
+  if (isError) {
+    return <div>Error: {error.message}</div>;
+  }
+  if (isEmpty) {
+    return <div>No NFTs found</div>;
+  }
+
+  const nfts = data.map((i) => i.attachedMetadata);
+
   return (
-    <div className="bg-white mt-4">
-      <div className="max-w-2xl mx-auto py-4 px-4 sm:py-4 sm:px-2 lg:max-w-7xl lg:px-8">
+    <div className="bg-white mt-4 shadow-2xl rounded-2xl">
+      <div className="mx-auto py-4 px-4">
         <h2 className="text-2xl font-extrabold tracking-tight text-gray-900">
           NFTs Held in Wallet {trimString(publicKey!.toString(), 8)}
         </h2>

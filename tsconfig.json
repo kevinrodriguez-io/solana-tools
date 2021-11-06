@@ -8,6 +8,7 @@
     ],
     "allowJs": true,
     "baseUrl": "src",
+    "downlevelIteration": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,

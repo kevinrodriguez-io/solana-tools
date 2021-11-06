@@ -1,15 +1,15 @@
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { CandyMachineHolderListForm } from 'components/CandyMachineHolderListForm';
 
 import { Shell } from 'components/layouts/Shell';
 import { NFTCardList } from 'components/NFTCardList';
 import { Skeleton } from 'components/Skeleton';
-import { useNFTs } from 'hooks/useNFTs';
 
 export const HomeView = () => {
   const { connecting, disconnecting, connected } = useWallet();
   if (connecting || disconnecting)
     return (
-      <Shell title="Loading...">
+      <Shell title="Connecting...">
         <Skeleton />
         <Skeleton />
         <Skeleton />
@@ -20,23 +20,10 @@ export const HomeView = () => {
 };
 
 const HomeViewContents = () => {
-  const { connection } = useConnection();
-  const { publicKey } = useWallet();
-  const { data, error } = useNFTs(publicKey!, connection);
-  const isLoading = !data && !error;
-  if (isLoading) {
-    return (
-      <Shell title="Loading NFTs">
-        <Skeleton />
-        <Skeleton />
-        <Skeleton />
-      </Shell>
-    );
-  }
-  // NFTCard
   return (
     <Shell title="Randropper">
-      <NFTCardList nfts={data!.map((i) => i.attachedMetadata)} />
+      <CandyMachineHolderListForm />
+      <NFTCardList />
     </Shell>
   );
 };
