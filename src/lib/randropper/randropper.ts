@@ -1,4 +1,4 @@
-const cryptoRand = () => {
+export const cryptoRand = () => {
   const array = new Uint8Array(4);
   window.crypto.getRandomValues(array);
   const dataView = new DataView(array.buffer);
