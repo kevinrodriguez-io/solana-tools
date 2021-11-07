@@ -52,7 +52,7 @@ const getCandyMachineCreatorAccounts = async (
   return accounts;
 };
 
-const getHolderTokenAccounts = (
+const getMintHolderTokenAccounts = (
   mintAccount: PublicKey,
   connection: Connection,
 ) =>
@@ -74,6 +74,8 @@ const getHolderTokenAccounts = (
 
 const buildFetcher =
   (candyMachineId: PublicKey, connection: Connection) => async () => {
+    // Benchmark
+    const start = Date.now();
     const accounts = await getCandyMachineCreatorAccounts(
       connection,
       candyMachineId,
@@ -87,7 +89,7 @@ const buildFetcher =
         () =>
           new Promise<TokenHolder>(async (resolve, reject) => {
             try {
-              const tokenAccounts = await getHolderTokenAccounts(
+              const tokenAccounts = await getMintHolderTokenAccounts(
                 new PublicKey(mintAccount.meta.mint),
                 connection,
               );
@@ -96,11 +98,6 @@ const buildFetcher =
                   tokenAccount.account.data,
                 );
                 if (decodedTokenAccount.amount[0] === 1) {
-                  console.log(
-                    `🚀 Found owner: ${new PublicKey(
-                      decodedTokenAccount.owner,
-                    )} for mint: ${new PublicKey(mintAccount.meta.mint)}`,
-                  );
                   resolve({
                     associatedTokenAddress: tokenAccount.pubkey,
                     metadataAccount: mintAccount.pubkey,
@@ -117,6 +114,11 @@ const buildFetcher =
       ),
     );
     const holders = await Promise.all(promises);
+    // Benchmark
+    const end = Date.now();
+    console.log(
+      `Fetched ${holders.length} candy machine holders in ${end - start}ms`,
+    );
     return holders;
   };
 
@@ -125,6 +127,6 @@ export const useCandyMachineHolders = (
   connection: Connection,
 ) =>
   useSWR(
-    candyMachineId,
+    `candyMachineId-${candyMachineId}`,
     buildFetcher(new PublicKey(candyMachineId), connection),
   );

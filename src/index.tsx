@@ -20,6 +20,7 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import './index.css';
 import { useMemo } from 'react';
+import { GrindKey } from 'views/grindKey';
 
 const App = () => {
   const network = WalletAdapterNetwork.Mainnet;
@@ -45,6 +46,7 @@ const App = () => {
           <Router>
             <Routes>
               <Route path="/" element={<HomeView />} />
+              <Route path="/grind-key" element={<GrindKey />} />
             </Routes>
           </Router>
         </WalletModalProvider>

@@ -6,6 +6,7 @@
         "memcmp",
         "Randropper",
         "Solflare",
-        "Sollet"
+        "Sollet",
+        "tailwindcss"
     ]
 }

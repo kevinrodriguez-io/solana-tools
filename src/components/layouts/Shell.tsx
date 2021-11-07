@@ -1,11 +1,17 @@
 import { FC, Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { MenuAlt2Icon, VariableIcon, XIcon } from '@heroicons/react/outline';
+import {
+  MenuAlt2Icon,
+  VariableIcon,
+  XIcon,
+  CogIcon,
+} from '@heroicons/react/outline';
 import classNames from 'classnames';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const navigation = [
-  { name: 'Randropper', href: '#', icon: VariableIcon, current: true },
+  { name: 'Randropper', href: '/', icon: VariableIcon, current: false },
+  { name: 'Grind Key', href: '/grind-key', icon: CogIcon, current: false },
 ];
 
 export const Shell: FC<{ title: string }> = ({ children, title }) => {
@@ -65,11 +71,9 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
                   </div>
                 </Transition.Child>
                 <div className="flex-shrink-0 flex items-center px-4">
-                  <img
-                    className="h-8 w-auto"
-                    src="/moonbox-logo.png"
-                    alt="Workflow"
-                  />
+                  <p className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-400 to-purple-600">
+                    Solana Moon Box
+                  </p>
                 </div>
                 <div className="mt-5 flex-1 h-0 overflow-y-auto">
                   <nav className="px-2 space-y-1">
@@ -185,11 +189,11 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
 
           <main className="flex-1">
             <div className="py-6">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+              {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                 <h1 className="text-2xl font-semibold text-gray-900">
                   {title}
                 </h1>
-              </div>
+              </div> */}
               <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                 {children}
               </div>

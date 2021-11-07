@@ -1,6 +1,5 @@
 import { useConnection } from '@solana/wallet-adapter-react';
 import { useCandyMachineHolders } from 'hooks/useCandyMachineHolders';
-import { Skeleton } from './Skeleton';
 
 type CandyMachineHolderListProps = {
   candyMachinePrimaryKey: string;
@@ -20,16 +19,30 @@ export const CandyMachineHolderList = ({
 
   if (isLoading) {
     return (
-      <>
-        <Skeleton />
-        <Skeleton />
-        <Skeleton />
-      </>
+      <div className="flex flex-col">
+        <pre className="flex bg-gray-800 text-white max-h-96 overflow-scroll mt-4 p-4 shadow-md rounded-md">
+          {JSON.stringify(
+            {
+              candyMachinePK: candyMachinePrimaryKey,
+              loading: true,
+              note: 'Results will appear here once snapshot is taken. This process takes up to 10 minutes depending on your RPC.',
+            },
+            null,
+            2,
+          )}
+        </pre>
+      </div>
     );
   }
 
   if (isError) {
-    return <div>Error: {error.message}</div>;
+    return (
+      <div className="flex flex-col">
+        <pre className="flex bg-gray-800 text-white max-h-96 overflow-scroll mt-4 p-4 shadow-md rounded-md">
+          {JSON.stringify({ error }, null, 2)}
+        </pre>
+      </div>
+    );
   }
 
   if (isEmpty) {
@@ -44,21 +57,21 @@ export const CandyMachineHolderList = ({
   const holdersDownloadString =
     'data:text/json;charset=utf-8,' +
     encodeURIComponent(
-        JSON.stringify(
-          data.map(
-            ({
-              associatedTokenAddress,
-              metadataAccount,
-              mintAccount,
-              ownerWallet,
-            }) => ({
-              associatedTokenAddress: associatedTokenAddress.toBase58(),
-              metadataAccount: metadataAccount.toBase58(),
-              mintAccount: mintAccount.toBase58(),
-              ownerWallet: ownerWallet.toBase58(),
-            }),
-          ),
+      JSON.stringify(
+        data.map(
+          ({
+            associatedTokenAddress,
+            metadataAccount,
+            mintAccount,
+            ownerWallet,
+          }) => ({
+            associatedTokenAddress: associatedTokenAddress.toBase58(),
+            metadataAccount: metadataAccount.toBase58(),
+            mintAccount: mintAccount.toBase58(),
+            ownerWallet: ownerWallet.toBase58(),
+          }),
         ),
+      ),
     );
 
   return (
