@@ -5,7 +5,10 @@ import { BehaviorSubject } from 'rxjs';
 const defaultState = {
   loadedNFTS: false,
   loadedHolders: false,
+  candyMachinePrimaryKey: "",
 };
+
+type State = typeof defaultState;
 
 const RandropperContext = React.createContext(defaultState);
 
@@ -20,7 +23,7 @@ export const RandropperProvider: FC = ({ children }) => {
           const subscription = RandropperStateSubject.subscribe(callback);
           return () => subscription.unsubscribe();
         },
-      } as Subscription<typeof RandropperStateSubject.value>),
+      } as Subscription<State>),
     [],
   );
   const value = useSubscription(subscription);
@@ -31,13 +34,13 @@ export const RandropperProvider: FC = ({ children }) => {
   );
 };
 
-export const useRandropper = () => {
+export const useRandropper = (): [State, (value: State) => void] => {
   const currentValue = React.useContext(RandropperContext);
   if (currentValue === undefined) {
     throw new Error('useRandropper must be used within a RandropperProvider');
   }
   const setValue = useCallback(
-    (value: typeof defaultState) => RandropperStateSubject.next(value),
+    (value: State) => RandropperStateSubject.next(value),
     [],
   );
   return useMemo(() => [currentValue, setValue], [currentValue, setValue]);

@@ -108,7 +108,7 @@ const grind = async (startsWith: string): Promise<PseudoKeyPair> => {
 };
 
 export const GrindKey = () => {
-  const [isGrinding, setIsGrinding] = useState(false);
+  const [, setIsGrinding] = useState(false);
   const [result, setResult] = useState<PseudoKeyPair | null>(null);
   const [journal, setJournal] = useState('');
   const logBox = useRef<HTMLPreElement>(null!);

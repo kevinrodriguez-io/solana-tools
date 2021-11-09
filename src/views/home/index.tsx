@@ -1,10 +1,11 @@
 import { useWallet } from '@solana/wallet-adapter-react';
 import { CandyMachineHolderListForm } from 'components/CandyMachineHolderListForm';
+import { Distributor } from 'components/Distributor';
 
 import { Shell } from 'components/layouts/Shell';
 import { NFTCardList } from 'components/NFTCardList';
 import { Skeleton } from 'components/Skeleton';
-import { RandropperProvider } from 'context/RandropperContext';
+import { RandropperProvider, useRandropper } from 'context/RandropperContext';
 
 export const HomeView = () => {
   const { connecting, disconnecting, connected } = useWallet();
@@ -25,10 +26,14 @@ export const HomeView = () => {
 };
 
 const HomeViewContents = () => {
+  const [randropper] = useRandropper();
+  const readyForDistribution =
+    randropper.loadedHolders && randropper.loadedNFTS;
   return (
     <Shell title="Randropper">
       <CandyMachineHolderListForm />
       <NFTCardList />
+      {readyForDistribution ? <Distributor /> : null}
     </Shell>
   );
 };
