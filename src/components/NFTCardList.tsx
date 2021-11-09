@@ -26,7 +26,15 @@ export const NFTCardList: FC = () => {
     return <div>Error: {error.message}</div>;
   }
   if (isEmpty) {
-    return <div>No NFTs found</div>;
+    return (
+      <div className="bg-white mt-4 shadow-2xl rounded-2xl">
+        <div className="mx-auto py-4 px-4">
+          <h2 className="text-2xl font-extrabold tracking-tight text-gray-900">
+            There are no NFTs Held in Wallet {trimString(publicKey!.toString(), 8)}
+          </h2>
+        </div>
+      </div>
+    );
   }
 
   const nfts = data.map((i) => i.attachedMetadata);

@@ -4,6 +4,7 @@ import { CandyMachineHolderListForm } from 'components/CandyMachineHolderListFor
 import { Shell } from 'components/layouts/Shell';
 import { NFTCardList } from 'components/NFTCardList';
 import { Skeleton } from 'components/Skeleton';
+import { RandropperProvider } from 'context/RandropperContext';
 
 export const HomeView = () => {
   const { connecting, disconnecting, connected } = useWallet();
@@ -16,7 +17,11 @@ export const HomeView = () => {
       </Shell>
     );
   if (!connected) return <Shell title="Please connect first..." />;
-  return <HomeViewContents />;
+  return (
+    <RandropperProvider>
+      <HomeViewContents />
+    </RandropperProvider>
+  );
 };
 
 const HomeViewContents = () => {

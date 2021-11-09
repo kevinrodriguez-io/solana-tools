@@ -1,5 +1,7 @@
 import { useConnection } from '@solana/wallet-adapter-react';
+import { useRandropper } from 'context/RandropperContext';
 import { useCandyMachineHolders } from 'hooks/useCandyMachineHolders';
+import { useEffect } from 'react';
 
 type CandyMachineHolderListProps = {
   candyMachinePrimaryKey: string;
@@ -13,9 +15,18 @@ export const CandyMachineHolderList = ({
     candyMachinePrimaryKey.trim(),
     connection,
   );
+  const [, setRandropper] = useRandropper()
   const isLoading = !data && !error;
   const isError = error;
   const isEmpty = !data || data.length === 0;
+
+  useEffect(() => {
+    if (isLoading || isError || isEmpty) {
+      return;
+    }
+    if (data && data.length) {
+    }
+  }, [isEmpty, isError, isLoading]);
 
   if (isLoading) {
     return (

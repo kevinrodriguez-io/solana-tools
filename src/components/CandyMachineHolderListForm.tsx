@@ -15,7 +15,6 @@ export const CandyMachineHolderListForm = () => {
     setCandyMachinePrimaryKey(
       `${(candyMachinePrimaryKey! as HTMLInputElement).value}`,
     );
-    //5ujZ8BBFXpcByNbQdxANxbydxUhz5hVavpapvrEUc2Da
   };
 
   return (
