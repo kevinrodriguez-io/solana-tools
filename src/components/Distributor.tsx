@@ -5,33 +5,33 @@ import { useNFTs } from 'hooks/useNFTs';
 import { Skeleton } from './Skeleton';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from './Button';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, Transaction } from '@solana/web3.js';
 import { DistributionItem } from './DistributionItem';
 import { Subject } from 'rxjs';
 import { Terminal } from './Terminal';
+import { useLocalStorage } from 'hooks/useLocalStorage';
+import * as SPLToken from '@solana/spl-token';
+import { getOrCreateAssociatedAccountInfoWithWallet } from 'lib/solana/getOrCreateAssociatedTokenAccount';
+import pLimit from 'p-limit';
 
-export type PairTransactionState = 'pending' | 'success' | 'error';
+const limit = pLimit(10);
+
+export type PairTransactionState = 'pending' | 'processing' | 'success' | 'error';
 
 export type PairInformation = {
-  index: number;
+  id: number;
   mint: string;
   winnerWallet: string;
-  txId: null;
+  txId: string | null;
   state: PairTransactionState;
-};
-
-const tryGetLocalStoragePairs = () => {
-  const pairs = localStorage.getItem('pairs');
-  if (pairs) {
-    return JSON.parse(pairs);
-  }
-  return [];
+  error: string | null;
 };
 
 export const Distributor = () => {
-  const [pairs, setPairs] = useState<PairInformation[] | null>(
-    tryGetLocalStoragePairs(),
-  );
+  const [pairs, setPairs] = useLocalStorage<Record<
+    string,
+    PairInformation
+  >>('pairs', {});
   const logger = useMemo(() => new Subject<string>(), []);
   const logBox = useRef<HTMLPreElement>(null!);
   const [journal, setJournal] = useState('Transaction history will go here.');
@@ -45,18 +45,13 @@ export const Distributor = () => {
     };
   }, [logger]);
   const { connection } = useConnection();
-  const { publicKey } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
   const [randropper] = useRandropper();
   const cmHoldersSwr = useCandyMachineHolders(
     randropper.candyMachinePrimaryKey.trim(),
     connection,
   );
   const nftsSwr = useNFTs(publicKey!, connection);
-
-  useEffect(() => {
-    localStorage.setItem('pairs', JSON.stringify(pairs));
-  }, [pairs]);
-
   const isLoadingCMHolders = !cmHoldersSwr.data && !cmHoldersSwr.error;
   const isLoadingNFTs = !nftsSwr.data && !nftsSwr.error;
   const isLoading = isLoadingCMHolders || isLoadingNFTs;
@@ -86,11 +81,142 @@ export const Distributor = () => {
           shufflerWorker.terminate();
         };
       });
-      setPairs(pairs);
+      setPairs(
+        pairs.reduce(
+          (acc, pair) => ({
+            ...acc,
+            [pair.id]: pair,
+          }),
+          {},
+        ),
+      );
     } catch (error) {
       logger.next(`Error: ${error}`);
     }
     logger.next('Shuffling done.');
+  };
+
+  const handleStartSendingItems = async () => {
+    logger.next(`\nSending ${(pairs ?? []).length} pairs.`);
+    if (!pairs?.length) {
+      logger.next('No pairs to send.');
+      return;
+    }
+    try {
+      const promises = Object.values(pairs).map((pair) =>
+        limit(
+          () =>
+            new Promise<Record<string, PairInformation>>(
+              async (resolve, reject) => {
+                try {
+                  const { id, mint, state, winnerWallet } = pair;
+                  if (state === 'success') {
+                    logger.next(`Pair ${id} already sent successfully.`);
+                    return;
+                  }
+
+                  setPairs((pairs) => ({
+                    ...pairs,
+                    [id]: {
+                      ...pair,
+                      state: 'processing',
+                    },
+                  }));
+
+                  logger.next(`Sending Pair ${mint} - ${winnerWallet}.`);
+
+                  const token = new SPLToken.Token(
+                    connection,
+                    new PublicKey(mint),
+                    SPLToken.TOKEN_PROGRAM_ID,
+                    {
+                      publicKey: publicKey!,
+                      secretKey: new Uint8Array(0), // Disregard this.
+                    },
+                  );
+
+                  logger.next(`Get/Create ATA for ${publicKey!.toBase58()}.`);
+                  const source =
+                    await getOrCreateAssociatedAccountInfoWithWallet(
+                      connection,
+                      sendTransaction,
+                      {
+                        address: publicKey!,
+                        payer: publicKey!,
+                        token,
+                      },
+                    );
+
+                  logger.next(`Get/Create ATA for ${winnerWallet!}.`);
+                  const destination =
+                    await getOrCreateAssociatedAccountInfoWithWallet(
+                      connection,
+                      sendTransaction,
+                      {
+                        address: new PublicKey(winnerWallet),
+                        payer: publicKey!,
+                        token,
+                      },
+                    );
+
+                  const transferInstruction =
+                    SPLToken.Token.createTransferInstruction(
+                      SPLToken.TOKEN_PROGRAM_ID,
+                      source.address,
+                      destination.address,
+                      publicKey!,
+                      [],
+                      1,
+                    );
+
+                  const recentBlockhash = await connection.getRecentBlockhash();
+                  const transaction = new Transaction({
+                    feePayer: publicKey!,
+                    recentBlockhash: recentBlockhash.blockhash,
+                  }).add(transferInstruction);
+
+                  const signature = await sendTransaction(
+                    transaction,
+                    connection,
+                  );
+                  resolve({
+                    [id]: { ...pair, txId: signature, state: 'success' },
+                  });
+                  logger.next(`Pair ${mint} - ${winnerWallet} sent.`);
+                } catch (error: any) {
+                  reject({
+                    [pair.id.toString()]: {
+                      ...pair,
+                      state: 'error',
+                      error: error.message,
+                    },
+                  });
+                }
+              },
+            ),
+        ),
+      );
+      const allSettled = await Promise.allSettled(promises);
+
+      for (const settled of allSettled) {
+        if (settled.status === 'rejected') {
+          const error = settled.reason as Record<string, PairInformation>;
+          setPairs((pairs) => ({
+            ...pairs,
+            ...error,
+          }));
+        } else {
+          const success = settled.value as Record<string, PairInformation>;
+          setPairs((pairs) => ({
+            ...pairs,
+            ...success,
+          }));
+        }
+      }
+    } catch (error) {
+      logger.next(`Error: ${error}`);
+    }
+    logger.next('Sending done.');
   };
 
   if (isLoading) {
@@ -115,7 +241,7 @@ export const Distributor = () => {
             Make pairs (Shuffle)
           </Button>
           <div className="m-1" />
-          {pairs?.length ? (
+          {Object.values(pairs).length ? (
             <>
               <a
                 href={pairsProofUrl}
@@ -125,7 +251,10 @@ export const Distributor = () => {
                 Download JSON Proof
               </a>
               <div className="m-1" />
-              <Button className="flex-1 flex items-center justify-center">
+              <Button
+                onClick={handleStartSendingItems}
+                className="flex-1 flex items-center justify-center"
+              >
                 Start sending items
               </Button>
             </>
@@ -135,9 +264,9 @@ export const Distributor = () => {
           {journal}
         </Terminal>
         <div className="flex flex-row flex-wrap">
-          {(pairs ?? []).map(
+          {(pairs ? Object.values(pairs) : []).map(
             (
-              { mint, winnerWallet, txId, state, index },
+              { mint, winnerWallet, txId, state, id, error },
               _,
               __,
               matchingNFTItem = nftsSwr.data!.find(
@@ -146,12 +275,13 @@ export const Distributor = () => {
               ),
             ) => (
               <DistributionItem
-                index={index}
+                id={id}
                 key={mint}
                 mint={mint}
                 nftMetadata={matchingNFTItem!.attachedMetadata}
                 state={state}
                 txId={txId}
+                error={error}
                 winnerWallet={winnerWallet}
               />
             ),

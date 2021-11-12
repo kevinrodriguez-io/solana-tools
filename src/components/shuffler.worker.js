@@ -24,7 +24,7 @@ const shuffle = (array) => {
 addEventListener('message', (e) => {
   try {
     const { nftMints, holderWallets } = e.data;
-    for (let i = 0; i < 1_000_000; i++) {
+    for (let i = 0; i < 1_000_000; i++) { // Shuffle a million times.
       const nftMintsShuffled = shuffle(nftMints);
       const holderWalletsShuffled = shuffle(
         holderWallets.map((wallet) => ({
@@ -33,11 +33,11 @@ addEventListener('message', (e) => {
         })),
       );
       const pairs = [];
-      for (const [index, mint] of nftMintsShuffled.entries()) {
+      for (const [id, mint] of nftMintsShuffled.entries()) {
         const holder = holderWalletsShuffled.find((i) => !i.hasAssignedMint);
         if (holder) {
           pairs.push({
-            index,
+            id,
             mint: new PublicKey(mint).toBase58(),
             winnerWallet: new PublicKey(holder.wallet).toBase58(),
             state: 'pending',

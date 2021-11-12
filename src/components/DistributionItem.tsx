@@ -11,7 +11,7 @@ export const DistributionItem: FC<
   PairInformation & {
     nftMetadata: Metadata;
   }
-> = ({ index, mint, state, nftMetadata, txId, winnerWallet }) => {
+> = ({ id, mint, state, nftMetadata, txId, winnerWallet }) => {
   const { data, error } = useSWR(nftMetadata.data.uri, (uri: string) =>
     axios.get<TokenMetadataType>(uri).then((res) => res.data),
   );
@@ -32,7 +32,7 @@ export const DistributionItem: FC<
         />
         <div className="flex flex-col justify-center items-center absolute top-1/2 right-0">
           <span className="flex flex-col rounded-full items-center justify-center text-center text-white text-xs bg-black p-3 w-4 h-4">
-            {index + 1}
+            {id + 1}
           </span>
         </div>
       </div>
