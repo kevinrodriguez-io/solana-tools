@@ -3,9 +3,11 @@ import { RoundButton } from './RoundButton';
 import { SearchIcon } from '@heroicons/react/solid';
 import { useState } from 'react';
 import { CandyMachineHolderList } from './CandyMachineHolderList';
+import { Terminal } from './Terminal';
 
 export const CandyMachineHolderListForm = () => {
   const [candyMachinePrimaryKey, setCandyMachinePrimaryKey] = useState('');
+  const [candyMachinePrimaryKeyReadOnly, setCandyMachinePrimaryKeyReadOnly] = useState('');
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,6 +31,11 @@ export const CandyMachineHolderListForm = () => {
             placeHolder="6ujZ8B0FXpcByNbQdxBNxbydxUhz5hVavpapvrEUc2Dz"
             name="candyMachinePrimaryKey"
             type="text"
+            onChange={(e) => {
+              setCandyMachinePrimaryKeyReadOnly(
+                `${(e.target as HTMLInputElement).value}`,
+              );
+            }}
           />
           <div className="ml-2">
             <RoundButton type="submit">
@@ -41,7 +48,9 @@ export const CandyMachineHolderListForm = () => {
         <CandyMachineHolderList
           candyMachinePrimaryKey={candyMachinePrimaryKey}
         />
-      ) : null}
+      ) : (
+        <Terminal commandName={`load-cm-holders ${candyMachinePrimaryKeyReadOnly}`} />
+      )}
     </div>
   );
 };

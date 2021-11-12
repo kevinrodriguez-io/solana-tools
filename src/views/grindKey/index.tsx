@@ -115,7 +115,7 @@ export const GrindKey = () => {
 
   useEffect(() => {
     const subscription = logSubject.subscribe((newLine) => {
-      setJournal((journal) => journal + newLine + '\n');
+      setJournal((journal) => `${journal}${newLine}\n`);
       logBox.current.scrollTop = logBox.current.scrollHeight;
     });
     return () => {

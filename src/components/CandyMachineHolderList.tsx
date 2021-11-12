@@ -2,6 +2,7 @@ import { useConnection } from '@solana/wallet-adapter-react';
 import { useRandropper } from 'context/RandropperContext';
 import { useCandyMachineHolders } from 'hooks/useCandyMachineHolders';
 import { useEffect, useState } from 'react';
+import { Terminal } from './Terminal';
 
 type CandyMachineHolderListProps = {
   candyMachinePrimaryKey: string;
@@ -11,6 +12,7 @@ export const CandyMachineHolderList = ({
   candyMachinePrimaryKey,
 }: CandyMachineHolderListProps) => {
   const { connection } = useConnection();
+  const [loadingTextAnimation, setLoadingTextAnimation] = useState('Loading');
   const { data, error } = useCandyMachineHolders(
     candyMachinePrimaryKey.trim(),
     connection,
@@ -20,6 +22,17 @@ export const CandyMachineHolderList = ({
   const isLoading = !data && !error;
   const isError = error;
   const isEmpty = !data || data.length === 0;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (loadingTextAnimation.length < 10) {
+        setLoadingTextAnimation(loadingTextAnimation + '.');
+      } else {
+        setLoadingTextAnimation('Loading');
+      }
+    }, 300);
+    return () => clearInterval(interval);
+  }, [loadingTextAnimation]);
 
   useEffect(() => {
     if (isLoading || isError || isEmpty) {
@@ -47,46 +60,41 @@ export const CandyMachineHolderList = ({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col">
-        <pre className="flex bg-gray-800 text-white max-h-96 overflow-scroll mt-4 p-4 shadow-md rounded-md">
-          {JSON.stringify(
-            {
-              candyMachinePK: candyMachinePrimaryKey,
-              loading: true,
-              note: 'Results will appear here once snapshot is taken. This process takes up to 10 minutes depending on your RPC.',
-            },
-            null,
-            2,
-          )}
-        </pre>
-      </div>
+      <Terminal commandName={`load-cm-holders ${candyMachinePrimaryKey}`}>
+        Results will appear here once snapshot is taken. This process takes up
+        to 10 minutes depending on your RPC.
+        <br />
+        {loadingTextAnimation}
+      </Terminal>
     );
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col">
-        <pre className="flex bg-gray-800 text-white max-h-96 overflow-scroll mt-4 p-4 shadow-md rounded-md">
-          {JSON.stringify({ error }, null, 2)}
-        </pre>
-      </div>
+      <Terminal commandName={`load-cm-holders ${candyMachinePrimaryKey}`}>
+        Sorry, an error occurred. ${error}
+        Please refresh and try again.
+      </Terminal>
     );
   }
 
   if (isEmpty) {
-    return <div>No Holders found</div>;
+    return (
+      <Terminal commandName={`load-cm-holders ${candyMachinePrimaryKey}`}>
+        No candy machine holders found.
+      </Terminal>
+    );
   }
 
-  // Count unique holders
   const uniqueHolders = [
-    ...new Set(data.map((holder) => holder.ownerWallet.toBase58())),
+    ...new Set((data ?? []).map((holder) => holder.ownerWallet.toBase58())),
   ];
 
   const holdersDownloadString =
     'data:text/json;charset=utf-8,' +
     encodeURIComponent(
       JSON.stringify(
-        data.map(
+        (data ?? []).map(
           ({
             associatedTokenAddress,
             metadataAccount,
@@ -104,28 +112,32 @@ export const CandyMachineHolderList = ({
 
   return (
     <div className="flex flex-col">
-      <pre className="flex bg-gray-800 text-white max-h-96 overflow-scroll mt-4 p-4 shadow-md rounded-md">
-        {JSON.stringify(
-          data.map(
-            ({
-              associatedTokenAddress,
-              metadataAccount,
-              mintAccount,
-              ownerWallet,
-            }) => ({
-              associatedTokenAddress: associatedTokenAddress.toBase58(),
-              metadataAccount: metadataAccount.toBase58(),
-              mintAccount: mintAccount.toBase58(),
-              ownerWallet: ownerWallet.toBase58(),
-            }),
-          ),
-          null,
-          2,
-        )}
-      </pre>
+      <div className="w-full">
+        <Terminal commandName={`load-cm-holders ${candyMachinePrimaryKey}`}>
+          Loaded!
+          <br />
+          {JSON.stringify(
+            (data ?? []).map(
+              ({
+                associatedTokenAddress,
+                metadataAccount,
+                mintAccount,
+                ownerWallet,
+              }) => ({
+                associatedTokenAddress: associatedTokenAddress.toBase58(),
+                metadataAccount: metadataAccount.toBase58(),
+                mintAccount: mintAccount.toBase58(),
+                ownerWallet: ownerWallet.toBase58(),
+              }),
+            ),
+            null,
+            2,
+          )}
+        </Terminal>
+      </div>
       <div className="flex flex-row mt-4">
         <div className="">
-          <b>Total:</b> {data.length} Tokens&nbsp;|&nbsp;
+          <b>Total:</b> {(data ?? []).length} Tokens&nbsp;|&nbsp;
         </div>
         <div className="">
           <b>Unique Holders:</b> {uniqueHolders.length}&nbsp;|&nbsp;

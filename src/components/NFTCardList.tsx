@@ -58,7 +58,7 @@ export const NFTCardList: FC = () => {
 
   return (
     <div className="bg-white mt-4 shadow-2xl rounded-2xl">
-      <div className="mx-auto py-4 px-4 max-h-96 overflow-scroll">
+      <div className="mx-auto py-4 px-4 max-h-96 overflow-auto">
         <h2 className="text-2xl font-extrabold tracking-tight text-gray-900">
           NFTs Held in Wallet {trimString(publicKey!.toString(), 8)} ({data.length})
         </h2>
