@@ -12,11 +12,16 @@ import { Terminal } from './Terminal';
 import { useLocalStorage } from 'hooks/useLocalStorage';
 import * as SPLToken from '@solana/spl-token';
 import { getOrCreateAssociatedAccountInfoWithWallet } from 'lib/solana/getOrCreateAssociatedTokenAccount';
+import retry from 'async-retry';
 import pLimit from 'p-limit';
 
 const limit = pLimit(10);
 
-export type PairTransactionState = 'pending' | 'processing' | 'success' | 'error';
+export type PairTransactionState =
+  | 'pending'
+  | 'processing'
+  | 'success'
+  | 'error';
 
 export type PairInformation = {
   id: number;
@@ -27,11 +32,27 @@ export type PairInformation = {
   error: string | null;
 };
 
+class TransactionError extends Error {
+  public pair: PairInformation;
+  constructor(msg: string, pair: PairInformation) {
+    super(msg);
+    this.pair = pair;
+    Object.setPrototypeOf(this, TransactionError.prototype);
+  }
+  // TS Magic
+  static isTransactionError = (error: any): error is TransactionError =>
+    typeof error?.pair?.id === 'number' &&
+    typeof error?.pair?.mint === 'string' &&
+    typeof error?.pair?.winnerWallet === 'string';
+}
+
 export const Distributor = () => {
-  const [pairs, setPairs] = useLocalStorage<Record<
-    string,
-    PairInformation
-  >>('pairs', {});
+  const [pairs, setPairs] = useLocalStorage<Record<string, PairInformation>>(
+    'pairs',
+    {},
+  );
+
+  //#region Logger
   const logger = useMemo(() => new Subject<string>(), []);
   const logBox = useRef<HTMLPreElement>(null!);
   const [journal, setJournal] = useState('Transaction history will go here.');
@@ -44,6 +65,8 @@ export const Distributor = () => {
       subscription.unsubscribe();
     };
   }, [logger]);
+  //#endregion
+
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
   const [randropper] = useRandropper();
@@ -104,96 +127,104 @@ export const Distributor = () => {
     }
     try {
       const promises = Object.values(pairs).map((pair) =>
-        limit(
-          () =>
-            new Promise<Record<string, PairInformation>>(
-              async (resolve, reject) => {
-                try {
-                  const { id, mint, state, winnerWallet } = pair;
-                  if (state === 'success') {
-                    logger.next(`Pair ${id} already sent successfully.`);
-                    return;
-                  }
-
-                  setPairs((pairs) => ({
-                    ...pairs,
-                    [id]: {
-                      ...pair,
-                      state: 'processing',
-                    },
-                  }));
-
-                  logger.next(`Sending Pair ${mint} - ${winnerWallet}.`);
-
-                  const token = new SPLToken.Token(
-                    connection,
-                    new PublicKey(mint),
-                    SPLToken.TOKEN_PROGRAM_ID,
-                    {
-                      publicKey: publicKey!,
-                      secretKey: new Uint8Array(0), // Disregard this.
-                    },
-                  );
-
-                  logger.next(`Get/Create ATA for ${publicKey!.toBase58()}.`);
-                  const source =
-                    await getOrCreateAssociatedAccountInfoWithWallet(
-                      connection,
-                      sendTransaction,
-                      {
-                        address: publicKey!,
-                        payer: publicKey!,
-                        token,
-                      },
-                    );
-
-                  logger.next(`Get/Create ATA for ${winnerWallet!}.`);
-                  const destination =
-                    await getOrCreateAssociatedAccountInfoWithWallet(
-                      connection,
-                      sendTransaction,
-                      {
-                        address: new PublicKey(winnerWallet),
-                        payer: publicKey!,
-                        token,
-                      },
-                    );
-
-                  const transferInstruction =
-                    SPLToken.Token.createTransferInstruction(
-                      SPLToken.TOKEN_PROGRAM_ID,
-                      source.address,
-                      destination.address,
-                      publicKey!,
-                      [],
-                      1,
-                    );
-
-                  const recentBlockhash = await connection.getRecentBlockhash();
-                  const transaction = new Transaction({
-                    feePayer: publicKey!,
-                    recentBlockhash: recentBlockhash.blockhash,
-                  }).add(transferInstruction);
-
-                  const signature = await sendTransaction(
-                    transaction,
-                    connection,
-                  );
-                  resolve({
-                    [id]: { ...pair, txId: signature, state: 'success' },
-                  });
-                  logger.next(`Pair ${mint} - ${winnerWallet} sent.`);
-                } catch (error: any) {
-                  reject({
-                    [pair.id.toString()]: {
-                      ...pair,
-                      state: 'error',
-                      error: error.message,
-                    },
-                  });
+        limit(() =>
+          retry(
+            async () => {
+              try {
+                const { id, mint, state, winnerWallet } = pair;
+                if (state === 'success') {
+                  logger.next(`Pair ${id} already sent successfully.`);
+                  return {
+                    [id]: { ...pair, state: 'success' },
+                  };
                 }
+                setPairs((pairs) => ({
+                  ...pairs,
+                  [id]: {
+                    ...pair,
+                    state: 'processing',
+                  },
+                }));
+                logger.next(`Sending Pair ${mint} - ${winnerWallet}.`);
+                const token = new SPLToken.Token(
+                  connection,
+                  new PublicKey(mint),
+                  SPLToken.TOKEN_PROGRAM_ID,
+                  {
+                    publicKey: publicKey!,
+                    secretKey: new Uint8Array(0), // Disregard this, in fact it should be nullable.
+                  },
+                );
+
+                logger.next(`Get/Create ATA for ${publicKey!.toBase58()}.`);
+                const source = await getOrCreateAssociatedAccountInfoWithWallet(
+                  connection,
+                  sendTransaction,
+                  {
+                    address: publicKey!,
+                    payer: publicKey!,
+                    token,
+                  },
+                );
+
+                logger.next(`Get/Create ATA for ${winnerWallet!}.`);
+                const destination =
+                  await getOrCreateAssociatedAccountInfoWithWallet(
+                    connection,
+                    sendTransaction,
+                    {
+                      address: new PublicKey(winnerWallet),
+                      payer: publicKey!,
+                      token,
+                    },
+                  );
+
+                const transferInstruction =
+                  SPLToken.Token.createTransferInstruction(
+                    SPLToken.TOKEN_PROGRAM_ID,
+                    source.address,
+                    destination.address,
+                    publicKey!,
+                    [],
+                    1,
+                  );
+
+                const recentBlockhash = await connection.getRecentBlockhash();
+                const transaction = new Transaction({
+                  feePayer: publicKey!,
+                  recentBlockhash: recentBlockhash.blockhash,
+                }).add(transferInstruction);
+
+                const signature = await sendTransaction(
+                  transaction,
+                  connection,
+                );
+                logger.next(`Pair ${mint} - ${winnerWallet} sent.`);
+                return {
+                  [id]: { ...pair, txId: signature, state: 'success' },
+                };
+              } catch (error: any) {
+                throw new TransactionError(error.message, pair);
+              }
+            },
+            {
+              retries: 10,
+              onRetry: (error, attempt) => {
+                if (TransactionError.isTransactionError(error)) {
+                  logger.next(
+                    `Transaction Error on Pair: ${JSON.stringify(
+                      error.pair,
+                      null,
+                      2,
+                    )}`,
+                  );
+                }
+                logger.next(
+                  `Retrying on error: ${error.message}, attempt #${attempt}/10`,
+                );
               },
-            ),
+            },
+          ),
         ),
       );
       const allSettled = await Promise.allSettled(promises);

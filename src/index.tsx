@@ -39,7 +39,7 @@ const App = () => {
   );
   return (
     <ConnectionProvider
-      endpoint={'https://lokidfxnwlabdq.main.genesysgo.net:8899'}
+      endpoint={'https://cmnftdrop7299eedc071c.genesysgo.net/'}
     >
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>

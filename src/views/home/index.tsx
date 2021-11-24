@@ -26,9 +26,8 @@ export const HomeView = () => {
 };
 
 const HomeViewContents = () => {
-  const [randropper] = useRandropper();
-  const readyForDistribution =
-    randropper.loadedHolders && randropper.loadedNFTS;
+  const { loadedNFTS, loadedHolders } = useRandropper()[0];
+  const readyForDistribution = loadedNFTS && loadedHolders;
   return (
     <Shell title="Randropper">
       <CandyMachineHolderListForm />
