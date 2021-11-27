@@ -4,8 +4,24 @@ import { Metadata } from 'lib/metaplex-sdk/types';
 import { trimString } from 'lib/string/trimString';
 import { FC } from 'react';
 import useSWR from 'swr';
-import { PairInformation } from './Distributor';
+import { PairInformation, PairTransactionState } from './Distributor';
 import { Skeleton } from './Skeleton';
+import { Colors } from '@kevinrodriguez-io/pigment-core';
+import { RefreshIcon } from '@heroicons/react/solid';
+import { RoundButton } from './RoundButton';
+
+const getTxStateBgColor = (txState: PairTransactionState) => {
+  switch (txState) {
+    case 'pending':
+      return Colors.flatWhite.light;
+    case 'success':
+      return Colors.flatGreen.light;
+    case 'error':
+      return Colors.flatWatermelon.light;
+    case 'processing':
+      return Colors.flatPurple.light;
+  }
+};
 
 export const DistributionItem: FC<
   PairInformation & {
@@ -15,6 +31,9 @@ export const DistributionItem: FC<
   const { data, error } = useSWR(nftMetadata.data.uri, (uri: string) =>
     axios.get<TokenMetadataType>(uri).then((res) => res.data),
   );
+
+  const handleRetryItem = () => {};
+
   const isLoading = !error && !data;
   if (isLoading) {
     return <Skeleton />;
@@ -23,6 +42,9 @@ export const DistributionItem: FC<
     <div
       key={mint}
       className="m-4 p-4 rounded-xl shadow-xl flex flex-row bg-gray-50"
+      style={{
+        backgroundColor: getTxStateBgColor(state),
+      }}
     >
       <div className="flex flex-col justify-center relative">
         <img
@@ -38,7 +60,8 @@ export const DistributionItem: FC<
       </div>
       <div className="flex flex-col flex-1 ml-4">
         <p className="block text-black text-sm font-bold mb-2">
-          Mint: {trimString(mint, 8)} ({nftMetadata.data.name})
+          <p>{nftMetadata.data.name}</p>
+          Mint: {trimString(mint, 8)}
           <span style={{ fontSize: '8px' }} className="text-gray-600 block">
             {mint}
           </span>
@@ -55,6 +78,14 @@ export const DistributionItem: FC<
         <p className="block text-black text-sm font-bold mb-2">
           State: {state}
         </p>
+      </div>
+      <div className="flex flex-col justify-center ml-4">
+        <RoundButton
+          className={true ? '' : 'animate-spin'}
+          onClick={handleRetryItem}
+        >
+          <RefreshIcon className="h-5 w-5 rotate-180" aria-hidden="true" />
+        </RoundButton>
       </div>
     </div>
   );

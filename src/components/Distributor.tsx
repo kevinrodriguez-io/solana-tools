@@ -47,8 +47,9 @@ class TransactionError extends Error {
 }
 
 export const Distributor = () => {
+  const { candyMachinePrimaryKey } = useRandropper()[0];
   const [pairs, setPairs] = useLocalStorage<Record<string, PairInformation>>(
-    'pairs',
+    `pairs-for-cm-${candyMachinePrimaryKey}`,
     {},
   );
 

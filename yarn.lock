@@ -1496,6 +1496,11 @@
     "@json-rpc-tools/types" "^1.7.6"
     "@pedrouid/environment" "^1.0.1"
 
+"@kevinrodriguez-io/pigment-core@^1.3.1":
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/@kevinrodriguez-io/pigment-core/-/pigment-core-1.3.1.tgz#105848c6ab903442df1edff501dffc23de6bfea0"
+  integrity sha512-7B1tm/mm1cAnOdB1hnJASok/O5k+gyI9Lu3e/noazwGbCXlU721oQDWoSZzKNDJbZ+lTq44w6jCtxj9MdnIlPw==
+
 "@ledgerhq/devices@^6.11.2":
   version "6.11.2"
   resolved "https://registry.yarnpkg.com/@ledgerhq/devices/-/devices-6.11.2.tgz#a0413b087f7c07adf2a91d23f84a4580cdbb36fe"

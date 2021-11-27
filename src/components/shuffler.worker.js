@@ -10,7 +10,6 @@ const cryptoRand = () => {
   return value;
 };
 
-
 const shuffle = (array) => {
   const shuffled = array.slice(0);
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -20,11 +19,11 @@ const shuffle = (array) => {
   return shuffled;
 };
 
-
 addEventListener('message', (e) => {
   try {
     const { nftMints, holderWallets } = e.data;
-    for (let i = 0; i < 1_000_000; i++) { // Shuffle a million times.
+    for (let i = 0; i < 1_000_000; i++) {
+      // Shuffle a million times.
       const nftMintsShuffled = shuffle(nftMints);
       const holderWalletsShuffled = shuffle(
         holderWallets.map((wallet) => ({
