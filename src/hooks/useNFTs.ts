@@ -9,6 +9,17 @@ import * as SPLToken from '@solana/spl-token';
 import useSWR from 'swr/immutable';
 import { deserializeUnchecked } from 'borsh';
 import { Metadata, METADATA_SCHEMA } from 'lib/metaplex-sdk/types';
+import pLimit from 'p-limit';
+
+const limit = pLimit(10);
+
+type NFTItem = {
+  nftToken: {
+    pubkey: PublicKey;
+    account: AccountInfo<ParsedAccountData>;
+  };
+  attachedMetadata: Metadata;
+};
 
 // eslint-disable-next-line no-control-regex
 const METADATA_REPLACE = new RegExp('\u0000', 'g');
@@ -41,29 +52,34 @@ const buildFetcher =
         parseFloat(tokenAmount.amount) > 0 &&
         parseInt(tokenAmount.decimals) === 0,
     );
-    const nfts: {
-      nftToken: {
-        pubkey: PublicKey;
-        account: AccountInfo<ParsedAccountData>;
-      };
-      attachedMetadata: Metadata;
-    }[] = [];
+
+    const nfts: Promise<NFTItem>[] = [];
+
     for (const nftToken of nftTokens) {
       // Step #3. Get the metadata for each NFT token.
-      try {
-        const pda = await getMetadataPDA(
-          new PublicKey(nftToken.account.data.parsed.info.mint),
-        );
-        const tokenMetadataAccountInfo = await connection.getAccountInfo(pda);
-        const attachedMetadata = decodeMetadata(tokenMetadataAccountInfo!.data);
-        nfts.push({ nftToken, attachedMetadata });
-      } catch (error) {
-        console.log(
-          `MINT: ${nftToken.account.data.parsed.info.mint} IS NOT AN NFT`,
-        );
-      }
+      nfts.push(
+        limit(async () => {
+          try {
+            const pda = await getMetadataPDA(
+              new PublicKey(nftToken.account.data.parsed.info.mint),
+            );
+            const tokenMetadataAccountInfo = await connection.getAccountInfo(
+              pda,
+            );
+            const attachedMetadata = decodeMetadata(
+              tokenMetadataAccountInfo!.data,
+            );
+            return { nftToken, attachedMetadata };
+          } catch (error) {
+            console.log(
+              `MINT: ${nftToken.account.data.parsed.info.mint} IS NOT AN NFT`,
+            );
+            throw error;
+          }
+        }),
+      );
     }
-    return nfts;
+    return await Promise.all(nfts);
   };
 
 export const useNFTs = (publicKey: PublicKey, connection: Connection) =>

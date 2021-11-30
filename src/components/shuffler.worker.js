@@ -42,7 +42,7 @@ addEventListener('message', (e) => {
             state: 'pending',
             txId: null,
           });
-          holder.hasAssignedMint = true;
+          holder.hasAssignedMint = true; // This is a bit unnecessary because they go in order. I left it here just in case we reshuffled.
         }
       }
       postMessage({ type: 'SUCCESS', pairs });

@@ -4,11 +4,19 @@ import { Metadata } from 'lib/metaplex-sdk/types';
 import { trimString } from 'lib/string/trimString';
 import { FC } from 'react';
 import useSWR from 'swr';
-import { PairInformation, PairTransactionState } from './Distributor';
+import {
+  PairInformation,
+  Pairs,
+  PairsSetter,
+  PairTransactionState,
+  sendPairItem,
+} from './Distributor';
 import { Skeleton } from './Skeleton';
 import { Colors } from '@kevinrodriguez-io/pigment-core';
 import { RefreshIcon } from '@heroicons/react/solid';
 import { RoundButton } from './RoundButton';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { Subject } from 'rxjs';
 
 const getTxStateBgColor = (txState: PairTransactionState) => {
   switch (txState) {
@@ -20,19 +28,81 @@ const getTxStateBgColor = (txState: PairTransactionState) => {
       return Colors.flatWatermelon.light;
     case 'processing':
       return Colors.flatPurple.light;
+    case 'weird':
+      return Colors.flatYellow.light;
   }
 };
 
-export const DistributionItem: FC<
-  PairInformation & {
-    nftMetadata: Metadata;
-  }
-> = ({ id, mint, state, nftMetadata, txId, winnerWallet }) => {
-  const { data, error } = useSWR(nftMetadata.data.uri, (uri: string) =>
-    axios.get<TokenMetadataType>(uri).then((res) => res.data),
-  );
+type DistributionItemProps = {
+  pair: PairInformation;
+  nftMetadata?: Metadata;
+  pairs: Pairs;
+  setPairs: PairsSetter;
+  logger: Subject<string>;
+};
 
-  const handleRetryItem = () => {};
+export const DistributionItem: FC<DistributionItemProps> = ({
+  pair,
+  nftMetadata,
+  setPairs,
+  logger,
+}) => {
+  const { id, mint, state, txId, winnerWallet } = pair;
+  const { data, error } = useSWR(
+    nftMetadata?.data?.uri ?? 'NOT_FOUND',
+    (uri: string) => {
+      if (uri === 'NOT_FOUND') throw new Error('NOT_FOUND');
+      return axios.get<TokenMetadataType>(uri).then((res) => res.data);
+    },
+  );
+  const { connection } = useConnection();
+  const { publicKey, sendTransaction } = useWallet();
+
+  const handleRetryItem = async () => {
+    try {
+      setPairs((pairs) => ({
+        ...pairs,
+        [pair.id]: {
+          ...pair,
+          state: 'processing',
+        },
+      }));
+      const result = await sendPairItem(
+        pair,
+        setPairs,
+        { connection, sendTransaction, walletPublicKey: publicKey! },
+        logger,
+      );
+      setPairs((pairs) => ({ ...pairs, [result.id]: result }));
+    } catch (error: any) {
+      if (
+        (error.message as string)
+          .toLowerCase()
+          ?.includes('it is unknown if it succeeded or failed')
+      ) {
+        setPairs((pairs) => ({
+          ...pairs,
+          [pair.id]: {
+            ...pair,
+            state: 'weird',
+            txId: error.message,
+          },
+        }));
+        logger.next(
+          `CHECK TXID: ${error}, pair: ${JSON.stringify(pair, null, 2)}`,
+        );
+      } else {
+        setPairs((pairs) => ({
+          ...pairs,
+          [pair.id]: {
+            ...pair,
+            state: 'error',
+          },
+        }));
+        logger.next(`Error: ${error}, pair: ${JSON.stringify(pair, null, 2)}`);
+      }
+    }
+  };
 
   const isLoading = !error && !data;
   if (isLoading) {
@@ -49,7 +119,7 @@ export const DistributionItem: FC<
       <div className="flex flex-col justify-center relative">
         <img
           className="w-14 h-14 rounded-full shadow-md object-cover"
-          src={data!.image}
+          src={data?.image}
           alt="moonbox-logo"
         />
         <div className="flex flex-col justify-center items-center absolute top-1/2 right-0">
@@ -60,7 +130,9 @@ export const DistributionItem: FC<
       </div>
       <div className="flex flex-col flex-1 ml-4">
         <p className="block text-black text-sm font-bold mb-2">
-          <p>{nftMetadata.data.name}</p>
+          <span className="inline-block">
+            {nftMetadata?.data?.name ?? 'ALREADY_SENT'}
+          </span>
           Mint: {trimString(mint, 8)}
           <span style={{ fontSize: '8px' }} className="text-gray-600 block">
             {mint}
@@ -81,6 +153,7 @@ export const DistributionItem: FC<
       </div>
       <div className="flex flex-col justify-center ml-4">
         <RoundButton
+          // disabled={state === 'processing'}
           className={true ? '' : 'animate-spin'}
           onClick={handleRetryItem}
         >

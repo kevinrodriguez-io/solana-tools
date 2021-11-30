@@ -22,6 +22,9 @@ import './index.css';
 import { useMemo } from 'react';
 import { GrindKey } from 'views/grindKey';
 
+const RPC_ENDPOINT = 'https://cmnftdrop7299eedc071c.genesysgo.net/';
+// const RPC_ENDPOINT = 'https://rpc-mainnet-oiwy5uyn6a-ue.a.run.app';
+
 const App = () => {
   const network = WalletAdapterNetwork.Mainnet;
 
@@ -38,9 +41,7 @@ const App = () => {
     [network],
   );
   return (
-    <ConnectionProvider
-      endpoint={'https://cmnftdrop7299eedc071c.genesysgo.net/'}
-    >
+    <ConnectionProvider endpoint={RPC_ENDPOINT}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <Router>

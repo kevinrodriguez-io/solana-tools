@@ -5,7 +5,7 @@ import { useNFTs } from 'hooks/useNFTs';
 import { Skeleton } from './Skeleton';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from './Button';
-import { PublicKey, Transaction } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { DistributionItem } from './DistributionItem';
 import { Subject } from 'rxjs';
 import { Terminal } from './Terminal';
@@ -14,6 +14,7 @@ import * as SPLToken from '@solana/spl-token';
 import { getOrCreateAssociatedAccountInfoWithWallet } from 'lib/solana/getOrCreateAssociatedTokenAccount';
 import retry from 'async-retry';
 import pLimit from 'p-limit';
+import { String } from 'lodash';
 
 const limit = pLimit(10);
 
@@ -21,10 +22,11 @@ export type PairTransactionState =
   | 'pending'
   | 'processing'
   | 'success'
-  | 'error';
+  | 'error'
+  | 'weird';
 
 export type PairInformation = {
-  id: number;
+  id: string;
   mint: string;
   winnerWallet: string;
   txId: string | null;
@@ -32,7 +34,11 @@ export type PairInformation = {
   error: string | null;
 };
 
-class TransactionError extends Error {
+export type Pairs = Record<string, PairInformation>;
+export type PairsSetter = (value: Pairs | ((val: Pairs) => Pairs)) => void;
+type SendTransaction = ReturnType<typeof useWallet>['sendTransaction'];
+
+export class TransactionError extends Error {
   public pair: PairInformation;
   constructor(msg: string, pair: PairInformation) {
     super(msg);
@@ -45,6 +51,74 @@ class TransactionError extends Error {
     typeof error?.pair?.mint === 'string' &&
     typeof error?.pair?.winnerWallet === 'string';
 }
+
+export const sendPairItem = async (
+  pair: PairInformation,
+  setPairs: PairsSetter,
+  {
+    walletPublicKey,
+    connection,
+    sendTransaction,
+  }: {
+    walletPublicKey: PublicKey;
+    connection: Connection;
+    sendTransaction: SendTransaction;
+  },
+  logger: Subject<string>,
+) => {
+  const { id, mint, winnerWallet } = pair;
+  logger.next(`Sending Pair ${mint} - ${winnerWallet}.`);
+  const token = new SPLToken.Token(
+    connection,
+    new PublicKey(mint),
+    SPLToken.TOKEN_PROGRAM_ID,
+    {
+      publicKey: walletPublicKey,
+      secretKey: new Uint8Array(0), // Disregard this, in fact it should be nullable.
+    },
+  );
+
+  logger.next(`Get/Create ATA for ${walletPublicKey.toBase58()}.`);
+  const source = await getOrCreateAssociatedAccountInfoWithWallet(
+    connection,
+    sendTransaction,
+    {
+      address: walletPublicKey,
+      payer: walletPublicKey,
+      token,
+    },
+  );
+
+  logger.next(`Get/Create ATA for ${winnerWallet!}.`);
+  const destination = await getOrCreateAssociatedAccountInfoWithWallet(
+    connection,
+    sendTransaction,
+    {
+      address: new PublicKey(winnerWallet),
+      payer: walletPublicKey!,
+      token,
+    },
+  );
+
+  const transferInstruction = SPLToken.Token.createTransferInstruction(
+    SPLToken.TOKEN_PROGRAM_ID,
+    source.address,
+    destination.address,
+    walletPublicKey!,
+    [],
+    1,
+  );
+
+  const recentBlockhash = await connection.getRecentBlockhash();
+  const transaction = new Transaction({
+    feePayer: walletPublicKey!,
+    recentBlockhash: recentBlockhash.blockhash,
+  }).add(transferInstruction);
+
+  const signature = await sendTransaction(transaction, connection);
+  logger.next(`Pair ${mint} - ${winnerWallet} sent.`);
+  return { ...pair, txId: signature, state: 'success' } as PairInformation;
+};
 
 export const Distributor = () => {
   const { candyMachinePrimaryKey } = useRandropper()[0];
@@ -83,30 +157,32 @@ export const Distributor = () => {
   const handleMakeNewPairs = async () => {
     logger.next(`\nShuffling ${1_000_000} times.`);
     try {
-      const pairs = await new Promise<PairInformation[]>((resolve, reject) => {
-        const shufflerWorker = new Worker('./shuffler.worker.js', {
-          type: 'module',
-        });
-        shufflerWorker.postMessage({
-          nftMints: nftsSwr.data!.map((nft) =>
-            new PublicKey(nft.attachedMetadata.mint).toBase58(),
-          ),
-          holderWallets: cmHoldersSwr.data!.map((cmHolder) =>
-            cmHolder.ownerWallet.toBase58(),
-          ),
-        });
-        shufflerWorker.onmessage = (event) => {
-          if (event.data.type === 'error') {
-            reject(event.data.error);
-          } else {
-            resolve(event.data.pairs);
-          }
-          console.log({ data: event.data });
-          shufflerWorker.terminate();
-        };
-      });
+      const localPairs = await new Promise<PairInformation[]>(
+        (resolve, reject) => {
+          const shufflerWorker = new Worker('./shuffler.worker.js', {
+            type: 'module',
+          });
+          shufflerWorker.postMessage({
+            nftMints: nftsSwr.data!.map((nft) =>
+              new PublicKey(nft.attachedMetadata.mint).toBase58(),
+            ),
+            holderWallets: cmHoldersSwr.data!.map((cmHolder) =>
+              cmHolder.ownerWallet.toBase58(),
+            ),
+          });
+          shufflerWorker.onmessage = (event) => {
+            if (event.data.type === 'error') {
+              reject(event.data.error);
+            } else {
+              resolve(event.data.pairs);
+            }
+            console.log({ data: event.data });
+            shufflerWorker.terminate();
+          };
+        },
+      );
       setPairs(
-        pairs.reduce(
+        localPairs.reduce(
           (acc, pair) => ({
             ...acc,
             [pair.id]: pair,
@@ -121,133 +197,122 @@ export const Distributor = () => {
   };
 
   const handleStartSendingItems = async () => {
-    logger.next(`\nSending ${(pairs ?? []).length} pairs.`);
-    if (!pairs?.length) {
+    logger.next(`\nSending ${(Object.values(pairs) ?? []).length} pairs.`);
+    if (!pairs || Object.keys(pairs).length === 0) {
       logger.next('No pairs to send.');
       return;
     }
-    try {
-      const promises = Object.values(pairs).map((pair) =>
-        limit(() =>
-          retry(
-            async () => {
-              try {
-                const { id, mint, state, winnerWallet } = pair;
-                if (state === 'success') {
-                  logger.next(`Pair ${id} already sent successfully.`);
-                  return {
-                    [id]: { ...pair, state: 'success' },
-                  };
-                }
-                setPairs((pairs) => ({
-                  ...pairs,
-                  [id]: {
-                    ...pair,
-                    state: 'processing',
-                  },
-                }));
-                logger.next(`Sending Pair ${mint} - ${winnerWallet}.`);
-                const token = new SPLToken.Token(
-                  connection,
-                  new PublicKey(mint),
-                  SPLToken.TOKEN_PROGRAM_ID,
-                  {
-                    publicKey: publicKey!,
-                    secretKey: new Uint8Array(0), // Disregard this, in fact it should be nullable.
-                  },
-                );
-
-                logger.next(`Get/Create ATA for ${publicKey!.toBase58()}.`);
-                const source = await getOrCreateAssociatedAccountInfoWithWallet(
-                  connection,
-                  sendTransaction,
-                  {
-                    address: publicKey!,
-                    payer: publicKey!,
-                    token,
-                  },
-                );
-
-                logger.next(`Get/Create ATA for ${winnerWallet!}.`);
-                const destination =
-                  await getOrCreateAssociatedAccountInfoWithWallet(
-                    connection,
-                    sendTransaction,
-                    {
-                      address: new PublicKey(winnerWallet),
-                      payer: publicKey!,
-                      token,
-                    },
-                  );
-
-                const transferInstruction =
-                  SPLToken.Token.createTransferInstruction(
-                    SPLToken.TOKEN_PROGRAM_ID,
-                    source.address,
-                    destination.address,
-                    publicKey!,
-                    [],
-                    1,
-                  );
-
-                const recentBlockhash = await connection.getRecentBlockhash();
-                const transaction = new Transaction({
-                  feePayer: publicKey!,
-                  recentBlockhash: recentBlockhash.blockhash,
-                }).add(transferInstruction);
-
-                const signature = await sendTransaction(
-                  transaction,
-                  connection,
-                );
-                logger.next(`Pair ${mint} - ${winnerWallet} sent.`);
-                return {
-                  [id]: { ...pair, txId: signature, state: 'success' },
-                };
-              } catch (error: any) {
-                throw new TransactionError(error.message, pair);
-              }
-            },
-            {
-              retries: 10,
-              onRetry: (error, attempt) => {
-                if (TransactionError.isTransactionError(error)) {
-                  logger.next(
-                    `Transaction Error on Pair: ${JSON.stringify(
-                      error.pair,
-                      null,
-                      2,
-                    )}`,
-                  );
-                }
-                logger.next(
-                  `Retrying on error: ${error.message}, attempt #${attempt}/10`,
-                );
-              },
-            },
-          ),
-        ),
-      );
-      const allSettled = await Promise.allSettled(promises);
-
-      for (const settled of allSettled) {
-        if (settled.status === 'rejected') {
-          const error = settled.reason as Record<string, PairInformation>;
+    for (const pair of Object.values(pairs)) {
+      try {
+        setPairs((pairs) => ({
+          ...pairs,
+          [pair.id]: {
+            ...pair,
+            state: 'processing',
+          },
+        }));
+        const result = await sendPairItem(
+          pair,
+          setPairs,
+          { connection, sendTransaction, walletPublicKey: publicKey! },
+          logger,
+        );
+        setPairs((pairs) => ({ ...pairs, [result.id]: result }));
+      } catch (error: any) {
+        if (
+          (error.message as string)
+            .toLowerCase()
+            ?.includes('it is unknown if it succeeded or failed')
+        ) {
           setPairs((pairs) => ({
             ...pairs,
-            ...error,
+            [pair.id]: {
+              ...pair,
+              state: 'weird',
+              txId: error.message,
+            },
           }));
+          logger.next(
+            `CHECK TXID: ${error}, pair: ${JSON.stringify(pair, null, 2)}`,
+          );
         } else {
-          const success = settled.value as Record<string, PairInformation>;
           setPairs((pairs) => ({
             ...pairs,
-            ...success,
+            [pair.id]: {
+              ...pair,
+              state: 'error',
+            },
           }));
+          logger.next(
+            `Error: ${error}, pair: ${JSON.stringify(pair, null, 2)}`,
+          );
         }
       }
-    } catch (error) {
-      logger.next(`Error: ${error}`);
     }
+    // const promises = Object.values(pairs).map((pair) =>
+    //   limit(() =>
+    //     retry(
+    //       () =>
+    //         sendPairItem(
+    //           pair,
+    //           setPairs,
+    //           {
+    //             connection,
+    //             sendTransaction,
+    //             walletPublicKey: publicKey!,
+    //           },
+    //           logger,
+    //         ),
+    //       {
+    //         retries: 5,
+    //         onRetry: (error, attempt) => {
+    //           if (TransactionError.isTransactionError(error)) {
+    //             logger.next(
+    //               `Transaction Error on Pair: ${JSON.stringify(
+    //                 error.pair,
+    //                 null,
+    //                 2,
+    //               )}`,
+    //             );
+    //           }
+    //           logger.next(
+    //             `Retrying on error: ${error.message}, attempt #${attempt}/5`,
+    //           );
+    //         },
+    //       },
+    //     ),
+    //   ),
+    // );
+    // const allSettled = await Promise.allSettled(promises);
+
+    // const successCount = allSettled.filter(
+    //   (settled) => settled.status === 'fulfilled',
+    // ).length;
+    // const errorCount = allSettled.filter(
+    //   (settled) => settled.status === 'rejected',
+    // ).length;
+    // logger.next(
+    //   `Success: ${successCount}, Error: ${errorCount}, Total: ${
+    //     successCount + errorCount
+    //   }`,
+    // );
+
+    // for (const settled of allSettled) {
+    //   if (settled.status === 'rejected') {
+    //     const error = settled.reason as Record<string, PairInformation>;
+    //     setPairs((pairs) => ({
+    //       ...pairs,
+    //       ...error,
+    //     }));
+    //   } else {
+    //     const success = settled.value as Record<string, PairInformation>;
+    //     setPairs((pairs) => ({
+    //       ...pairs,
+    //       ...success,
+    //     }));
+    //   }
+    // }
+
     logger.next('Sending done.');
   };
 
@@ -298,23 +363,22 @@ export const Distributor = () => {
         <div className="flex flex-row flex-wrap">
           {(pairs ? Object.values(pairs) : []).map(
             (
-              { mint, winnerWallet, txId, state, id, error },
+              pair,
               _,
               __,
               matchingNFTItem = nftsSwr.data!.find(
                 (i) =>
-                  new PublicKey(i.attachedMetadata.mint).toBase58() === mint,
+                  new PublicKey(i.attachedMetadata.mint).toBase58() ===
+                  pair.mint,
               ),
             ) => (
               <DistributionItem
-                id={id}
-                key={mint}
-                mint={mint}
-                nftMetadata={matchingNFTItem!.attachedMetadata}
-                state={state}
-                txId={txId}
-                error={error}
-                winnerWallet={winnerWallet}
+                key={pair.id}
+                pair={pair}
+                nftMetadata={matchingNFTItem?.attachedMetadata}
+                pairs={pairs}
+                setPairs={setPairs}
+                logger={logger}
               />
             ),
           )}
