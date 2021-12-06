@@ -13,7 +13,7 @@ export const Terminal = forwardRef<HTMLPreElement, TerminalProps>(({ commandName
       <div className="ml-2 h-3 w-3 bg-green-500 rounded-full"></div>
     </div>
     <div className="mt-4 max-h-48 overflow-auto">
-      <span className="text-green-400">randropper:~$</span>
+      <span className="text-green-400">misterkevin:~$</span>
       <span>&nbsp;{commandName}</span>
       <pre ref={ref} className="flex-1 typing items-center">{children}</pre>
     </div>

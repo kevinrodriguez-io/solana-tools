@@ -3,56 +3,15 @@ import { RoundButton } from 'components/RoundButton';
 import { SearchIcon } from '@heroicons/react/solid';
 import { LabelledInput } from 'components/LabelledInput';
 import { Shell } from 'components/layouts/Shell';
-import { Keypair } from '@solana/web3.js';
-import pLimit from 'p-limit';
 import { Subject } from 'rxjs';
+import { Terminal } from 'components/Terminal';
 
 const logSubject = new Subject<string>();
-
 const threadPoolSize = window.navigator.hardwareConcurrency;
-
-const limit = pLimit(10);
 
 type PseudoKeyPair = {
   publicKey: string;
   privateKey: number[];
-};
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const grindConcurrent = async (startsWith: string): Promise<PseudoKeyPair> => {
-  let validKey: PseudoKeyPair | null = null;
-  const start = Date.now();
-  let counter = 0;
-  while (validKey === null) {
-    const results = await Promise.all(
-      [...Array(threadPoolSize)].map(() =>
-        limit(
-          () =>
-            new Promise<PseudoKeyPair>((resolve) => {
-              const generated = Keypair.generate();
-              resolve({
-                publicKey: generated.publicKey.toBase58(),
-                privateKey: [...generated.secretKey.values()],
-              });
-            }),
-        ),
-      ),
-    );
-    counter++;
-    validKey =
-      results.find(({ publicKey }) => publicKey.startsWith(startsWith)) ?? null;
-    if (!validKey) {
-      if ((counter * threadPoolSize) % 100 === 0) {
-        console.log(
-          `Grinded ${counter * threadPoolSize} keys in ${Date.now() - start}ms`,
-        );
-      }
-    }
-  }
-  // Finish Thread Pool
-  const end = Date.now();
-  console.log(`Grinded ${validKey.publicKey} in ${end - start}ms`);
-  return validKey;
 };
 
 /**
@@ -170,14 +129,11 @@ export const GrindKey = () => {
             </div>
           </div>
         </form>
-        <pre
-          ref={logBox}
-          className="flex bg-gray-800 text-white max-h-96 overflow-scroll mt-4 p-4 shadow-md rounded-md"
-        >
+        <Terminal commandName="grind" ref={logBox}>
           {journal}
-        </pre>
+        </Terminal>
         {result ? (
-          <pre className="flex bg-gray-800 text-white max-h-96 overflow-scroll mt-4 p-4 shadow-md rounded-md">
+          <Terminal commandName="grind">
             {JSON.stringify(
               {
                 publicKey: result.publicKey,
@@ -186,7 +142,7 @@ export const GrindKey = () => {
               null,
               2,
             )}
-          </pre>
+          </Terminal>
         ) : null}
       </div>
     </Shell>
