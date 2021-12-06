@@ -12,6 +12,7 @@ import {
   getSolflareWallet,
   getSolletExtensionWallet,
   getSolletWallet,
+  getSlopeWallet,
 } from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 // import { clusterApiUrl } from '@solana/web3.js';
@@ -26,7 +27,7 @@ import { MintList } from 'views/candy-machine/MintList';
 import { LookAtWallet } from 'views/nfts/LookAtWallet';
 import { TransferAll } from 'views/nfts/TransferAll';
 
-const RPC_ENDPOINT = 'https://cmnftdrop7299eedc071c.genesysgo.net/';
+const RPC_ENDPOINT = 'https://solana-mainnet.phantom.tech/';
 // const RPC_ENDPOINT = 'https://rpc-mainnet-oiwy5uyn6a-ue.a.run.app';
 
 const App = () => {
@@ -36,6 +37,7 @@ const App = () => {
 
   const wallets = useMemo(
     () => [
+      getSlopeWallet(),
       getPhantomWallet(),
       getSolflareWallet(),
       getLedgerWallet(),

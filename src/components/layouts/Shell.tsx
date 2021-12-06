@@ -2,7 +2,6 @@ import { FC, Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import {
   MenuAlt2Icon,
-  VariableIcon,
   XIcon,
   CogIcon,
   CakeIcon,
@@ -108,7 +107,7 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
                 </Transition.Child>
                 <div className="flex-shrink-0 flex items-center px-4">
                   <p className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-400 to-purple-600">
-                    Moon Tools 🛠
+                    Solana Tools 🛠
                   </p>
                 </div>
                 <div className="mt-5 flex-1 h-0 overflow-y-auto">
@@ -152,7 +151,7 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
           <div className="flex-1 flex flex-col min-h-0 bg-gray-800">
             <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900">
               <p className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-400 to-purple-600">
-                Moon Tools 🛠
+                Solana Tools 🛠
               </p>
             </div>
             <div className="flex-1 flex flex-col overflow-y-auto">
