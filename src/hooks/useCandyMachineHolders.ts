@@ -2,44 +2,11 @@ import * as SPLToken from '@solana/spl-token';
 import { Connection, PublicKey } from '@solana/web3.js';
 import useSWR from 'swr/immutable';
 import pLimit from 'p-limit';
+import { getCandyMachineCreatorAccounts } from 'lib/metaplex-sdk/candyMachine';
 import * as Metaplex from '@metaplex/js';
-
 const MetadataProgram = Metaplex.programs.metadata;
 
 const limit = pLimit(10);
-
-const getCandyMachineCreatorAccounts = async (
-  connection: Connection,
-  candyMachineId: PublicKey,
-) =>
-  connection.getProgramAccounts(
-    new PublicKey(Metaplex.programs.metadata.MetadataProgram.PUBKEY),
-    {
-      filters: [
-        {
-          // This is some of that metaplex black magic query things.
-          memcmp: {
-            offset:
-              1 + // key
-              32 + // update auth
-              32 + // mint
-              4 + // name string length
-              MetadataProgram.MAX_NAME_LENGTH + // name
-              4 + // uri string length
-              MetadataProgram.MAX_URI_LENGTH + // uri*
-              4 + // symbol string length
-              MetadataProgram.MAX_SYMBOL_LENGTH + // symbol
-              2 + // seller fee basis points
-              1 + // whether or not there is a creators vec
-              4, // creators
-            bytes: candyMachineId.toBase58(),
-          },
-        },
-      ],
-      encoding: 'base64',
-      commitment: 'confirmed',
-    },
-  );
 
 const getMintHolderTokenAccounts = (
   mintAccount: PublicKey,
@@ -88,6 +55,7 @@ const buildFetcher =
           const decodedTokenAccount = SPLToken.AccountLayout.decode(
             tokenAccount.account.data,
           );
+          // This only works because it is expected for the amount of an NFT to be 1 if you own it.
           if (decodedTokenAccount.amount[0] === 1) {
             return {
               associatedTokenAddress: tokenAccount.pubkey,
@@ -107,6 +75,6 @@ export const useCandyMachineHolders = (
   connection: Connection,
 ) =>
   useSWR(
-    `candyMachineId-${candyMachineId}`,
+    `candyMachineId-holders-${candyMachineId}`,
     buildFetcher(new PublicKey(candyMachineId), connection),
   );

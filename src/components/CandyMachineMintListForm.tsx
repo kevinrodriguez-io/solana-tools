@@ -2,8 +2,8 @@ import { LabelledInput } from './LabelledInput';
 import { RoundButton } from './RoundButton';
 import { SearchIcon } from '@heroicons/react/solid';
 import { useState } from 'react';
-import { CandyMachineHolderList } from './CandyMachineHolderList';
 import { Terminal } from './Terminal';
+import { CandyMachineMintList } from './CandyMachineMintList';
 
 export const CandyMachineHolderListForm = () => {
   const [candyMachinePrimaryKey, setCandyMachinePrimaryKey] = useState('');
@@ -45,7 +45,7 @@ export const CandyMachineHolderListForm = () => {
         </div>
       </form>
       {candyMachinePrimaryKey ? (
-        <CandyMachineHolderList
+        <CandyMachineMintList
           candyMachinePrimaryKey={candyMachinePrimaryKey}
         />
       ) : (

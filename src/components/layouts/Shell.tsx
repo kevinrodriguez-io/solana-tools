@@ -6,17 +6,27 @@ import {
   XIcon,
   CogIcon,
   CakeIcon,
+  InformationCircleIcon,
+  MusicNoteIcon
 } from '@heroicons/react/outline';
 import classNames from 'classnames';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Link } from 'react-router-dom';
 
 const navigation = [
   {
-    name: 'CM Holder List',
-    href: '/cm-holder-list',
+    name: 'Candy Machine Holder List',
+    href: '/candy-machine/holder-list',
     icon: CakeIcon,
     current: false,
   },
+  {
+    name: 'Candy Machine Mints',
+    href: '/candy-machine/mints',
+    icon: MusicNoteIcon,
+    current: false,
+  },
+  { name: 'NFTs', href: '/nfts', icon: InformationCircleIcon, current: false },
   { name: 'Grind Key', href: '/grind-key', icon: CogIcon, current: false },
   { name: 'Randropper', href: '/', icon: VariableIcon, current: false },
 ];
@@ -85,9 +95,9 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
                 <div className="mt-5 flex-1 h-0 overflow-y-auto">
                   <nav className="px-2 space-y-1">
                     {navigation.map((item) => (
-                      <a
+                      <Link
                         key={item.name}
-                        href={item.href}
+                        to={item.href}
                         className={classNames(
                           item.current
                             ? 'bg-gray-900 text-white'
@@ -105,7 +115,7 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
                           aria-hidden="true"
                         />
                         {item.name}
-                      </a>
+                      </Link>
                     ))}
                   </nav>
                 </div>
@@ -129,9 +139,9 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
             <div className="flex-1 flex flex-col overflow-y-auto">
               <nav className="flex-1 px-2 py-4 space-y-1">
                 {navigation.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
-                    href={item.href}
+                    to={item.href}
                     className={classNames(
                       item.current
                         ? 'bg-gray-900 text-white'
@@ -149,7 +159,7 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
                       aria-hidden="true"
                     />
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </nav>
             </div>

@@ -21,7 +21,9 @@ import '@solana/wallet-adapter-react-ui/styles.css';
 import './index.css';
 import { useMemo } from 'react';
 import { GrindKey } from 'views/grindKey';
-import { CMHolderList } from 'views/cm-holder-list';
+import { HolderList } from 'views/candy-machine/HolderList';
+import { ListNFTs } from 'views/list-nfts';
+import { MintList } from 'views/candy-machine/MintList';
 
 const RPC_ENDPOINT = 'https://cmnftdrop7299eedc071c.genesysgo.net/';
 // const RPC_ENDPOINT = 'https://rpc-mainnet-oiwy5uyn6a-ue.a.run.app';
@@ -49,7 +51,12 @@ const App = () => {
             <Routes>
               <Route path="/" element={<HomeView />} />
               <Route path="/grind-key" element={<GrindKey />} />
-              <Route path="/cm-holder-list" element={<CMHolderList />} />
+              <Route
+                path="/candy-machine/holder-list"
+                element={<HolderList />}
+              />
+              <Route path="/candy-machine/mints" element={<MintList />} />
+              <Route path="/nfts" element={<ListNFTs />} />
             </Routes>
           </Router>
         </WalletModalProvider>
