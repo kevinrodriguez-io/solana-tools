@@ -1,7 +1,4 @@
-import { PairInformation } from 'components/Distributor';
-import { useState, useReducer } from 'react';
-
-type PairState = Record<string, PairInformation>;
+import { useState } from 'react';
 
 export const useLocalStorage = <T>(key: string, initialValue: T) => {
   const [storedValue, setStoredValue] = useState<T>(() => {

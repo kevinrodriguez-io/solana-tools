@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { TokenMetadataType } from 'lib/metaplex-sdk/tokenMetadataType';
-import { Metadata } from 'lib/metaplex-sdk/types';
 import { trimString } from 'lib/string/trimString';
 import { FC } from 'react';
 import useSWR from 'swr';
@@ -17,6 +16,7 @@ import { RefreshIcon } from '@heroicons/react/solid';
 import { RoundButton } from './RoundButton';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { Subject } from 'rxjs';
+import { Metadata } from '@metaplex/js/lib/programs/metadata';
 
 const getTxStateBgColor = (txState: PairTransactionState) => {
   switch (txState) {
@@ -49,7 +49,7 @@ export const DistributionItem: FC<DistributionItemProps> = ({
 }) => {
   const { id, mint, state, txId, winnerWallet } = pair;
   const { data, error } = useSWR(
-    nftMetadata?.data?.uri ?? 'NOT_FOUND',
+    nftMetadata?.data?.data?.uri ?? 'NOT_FOUND',
     (uri: string) => {
       if (uri === 'NOT_FOUND') throw new Error('NOT_FOUND');
       return axios.get<TokenMetadataType>(uri).then((res) => res.data);
@@ -131,7 +131,7 @@ export const DistributionItem: FC<DistributionItemProps> = ({
       <div className="flex flex-col flex-1 ml-4">
         <p className="block text-black text-sm font-bold mb-2">
           <span className="inline-block">
-            {nftMetadata?.data?.name ?? 'ALREADY_SENT'}
+            {nftMetadata?.data?.data?.name ?? 'ALREADY_SENT'}
           </span>
           Mint: {trimString(mint, 8)}
           <span style={{ fontSize: '8px' }} className="text-gray-600 block">

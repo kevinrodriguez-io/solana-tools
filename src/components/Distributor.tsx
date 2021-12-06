@@ -12,11 +12,6 @@ import { Terminal } from './Terminal';
 import { useLocalStorage } from 'hooks/useLocalStorage';
 import * as SPLToken from '@solana/spl-token';
 import { getOrCreateAssociatedAccountInfoWithWallet } from 'lib/solana/getOrCreateAssociatedTokenAccount';
-import retry from 'async-retry';
-import pLimit from 'p-limit';
-import { String } from 'lodash';
-
-const limit = pLimit(10);
 
 export type PairTransactionState =
   | 'pending'
@@ -66,7 +61,7 @@ export const sendPairItem = async (
   },
   logger: Subject<string>,
 ) => {
-  const { id, mint, winnerWallet } = pair;
+  const { mint, winnerWallet } = pair;
   logger.next(`Sending Pair ${mint} - ${winnerWallet}.`);
   const token = new SPLToken.Token(
     connection,
@@ -164,7 +159,7 @@ export const Distributor = () => {
           });
           shufflerWorker.postMessage({
             nftMints: nftsSwr.data!.map((nft) =>
-              new PublicKey(nft.attachedMetadata.mint).toBase58(),
+              new PublicKey(nft.attachedMetadata.data.mint).toBase58(),
             ),
             holderWallets: cmHoldersSwr.data!.map((cmHolder) =>
               cmHolder.ownerWallet.toBase58(),
@@ -368,7 +363,7 @@ export const Distributor = () => {
               __,
               matchingNFTItem = nftsSwr.data!.find(
                 (i) =>
-                  new PublicKey(i.attachedMetadata.mint).toBase58() ===
+                  new PublicKey(i.attachedMetadata.data.mint).toBase58() ===
                   pair.mint,
               ),
             ) => (

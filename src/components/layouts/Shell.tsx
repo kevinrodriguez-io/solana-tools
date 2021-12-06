@@ -5,13 +5,20 @@ import {
   VariableIcon,
   XIcon,
   CogIcon,
+  CakeIcon,
 } from '@heroicons/react/outline';
 import classNames from 'classnames';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 const navigation = [
-  { name: 'Randropper', href: '/', icon: VariableIcon, current: false },
+  {
+    name: 'CM Holder List',
+    href: '/cm-holder-list',
+    icon: CakeIcon,
+    current: false,
+  },
   { name: 'Grind Key', href: '/grind-key', icon: CogIcon, current: false },
+  { name: 'Randropper', href: '/', icon: VariableIcon, current: false },
 ];
 
 export const Shell: FC<{ title: string }> = ({ children, title }) => {
@@ -72,7 +79,7 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
                 </Transition.Child>
                 <div className="flex-shrink-0 flex items-center px-4">
                   <p className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-400 to-purple-600">
-                    Solana Moon Box
+                    Moon Tools 🛠
                   </p>
                 </div>
                 <div className="mt-5 flex-1 h-0 overflow-y-auto">
@@ -116,7 +123,7 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
           <div className="flex-1 flex flex-col min-h-0 bg-gray-800">
             <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900">
               <p className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-400 to-purple-600">
-                Solana Moon Box
+                Moon Tools 🛠
               </p>
             </div>
             <div className="flex-1 flex flex-col overflow-y-auto">
