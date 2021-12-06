@@ -27,11 +27,12 @@ export const HomeView = () => {
 
 const HomeViewContents = () => {
   const { loadedNFTS, loadedHolders } = useRandropper()[0];
+  const { publicKey } = useWallet();
   const readyForDistribution = loadedNFTS && loadedHolders;
   return (
     <Shell title="Randropper">
       <CandyMachineHolderListForm />
-      <NFTCardList limitHeight />
+      <NFTCardList limitHeight publicKey={publicKey} />
       {readyForDistribution ? <Distributor /> : null}
     </Shell>
   );

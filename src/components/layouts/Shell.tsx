@@ -7,7 +7,9 @@ import {
   CogIcon,
   CakeIcon,
   InformationCircleIcon,
-  MusicNoteIcon
+  MusicNoteIcon,
+  EyeIcon,
+  FireIcon,
 } from '@heroicons/react/outline';
 import classNames from 'classnames';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -26,7 +28,24 @@ const navigation = [
     icon: MusicNoteIcon,
     current: false,
   },
-  { name: 'NFTs', href: '/nfts', icon: InformationCircleIcon, current: false },
+  {
+    name: 'Look for wallet NFTs',
+    href: '/nfts/lookup-form',
+    icon: EyeIcon,
+    current: false,
+  },
+  {
+    name: 'Transfer All',
+    href: '/nfts/transfer-all',
+    icon: FireIcon,
+    current: false,
+  },
+  {
+    name: 'My NFTs',
+    href: '/nfts',
+    icon: InformationCircleIcon,
+    current: false,
+  },
   { name: 'Grind Key', href: '/grind-key', icon: CogIcon, current: false },
   { name: 'Randropper', href: '/', icon: VariableIcon, current: false },
 ];

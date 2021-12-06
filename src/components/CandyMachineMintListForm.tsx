@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Terminal } from './Terminal';
 import { CandyMachineMintList } from './CandyMachineMintList';
 
-export const CandyMachineHolderListForm = () => {
+export const CandyMachineMintListForm = () => {
   const [candyMachinePrimaryKey, setCandyMachinePrimaryKey] = useState('');
   const [candyMachinePrimaryKeyReadOnly, setCandyMachinePrimaryKeyReadOnly] = useState('');
 

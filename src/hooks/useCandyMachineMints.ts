@@ -22,6 +22,6 @@ export const useCandyMachineMints = (
   connection: Connection,
 ) =>
   useSWR(
-    `candyMachineId-mints-${candyMachineId}`,
+    `cm-mints-${candyMachineId}`,
     buildFetcher(new PublicKey(candyMachineId), connection),
   );

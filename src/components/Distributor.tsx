@@ -244,69 +244,6 @@ export const Distributor = () => {
         }
       }
     }
-    // const promises = Object.values(pairs).map((pair) =>
-    //   limit(() =>
-    //     retry(
-    //       () =>
-    //         sendPairItem(
-    //           pair,
-    //           setPairs,
-    //           {
-    //             connection,
-    //             sendTransaction,
-    //             walletPublicKey: publicKey!,
-    //           },
-    //           logger,
-    //         ),
-    //       {
-    //         retries: 5,
-    //         onRetry: (error, attempt) => {
-    //           if (TransactionError.isTransactionError(error)) {
-    //             logger.next(
-    //               `Transaction Error on Pair: ${JSON.stringify(
-    //                 error.pair,
-    //                 null,
-    //                 2,
-    //               )}`,
-    //             );
-    //           }
-    //           logger.next(
-    //             `Retrying on error: ${error.message}, attempt #${attempt}/5`,
-    //           );
-    //         },
-    //       },
-    //     ),
-    //   ),
-    // );
-    // const allSettled = await Promise.allSettled(promises);
-
-    // const successCount = allSettled.filter(
-    //   (settled) => settled.status === 'fulfilled',
-    // ).length;
-    // const errorCount = allSettled.filter(
-    //   (settled) => settled.status === 'rejected',
-    // ).length;
-    // logger.next(
-    //   `Success: ${successCount}, Error: ${errorCount}, Total: ${
-    //     successCount + errorCount
-    //   }`,
-    // );
-
-    // for (const settled of allSettled) {
-    //   if (settled.status === 'rejected') {
-    //     const error = settled.reason as Record<string, PairInformation>;
-    //     setPairs((pairs) => ({
-    //       ...pairs,
-    //       ...error,
-    //     }));
-    //   } else {
-    //     const success = settled.value as Record<string, PairInformation>;
-    //     setPairs((pairs) => ({
-    //       ...pairs,
-    //       ...success,
-    //     }));
-    //   }
-    // }
 
     logger.next('Sending done.');
   };

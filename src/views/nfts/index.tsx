@@ -23,9 +23,10 @@ export const ListNFTs = () => {
 };
 
 export const ListNFTsContent = () => {
+  const { publicKey } = useWallet();
   return (
     <Shell title="NFTs">
-      <NFTCardList />
+      <NFTCardList publicKey={publicKey} />
     </Shell>
   );
 };

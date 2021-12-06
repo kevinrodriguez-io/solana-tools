@@ -75,6 +75,6 @@ export const useCandyMachineHolders = (
   connection: Connection,
 ) =>
   useSWR(
-    `candyMachineId-holders-${candyMachineId}`,
+    `cm-holders-${candyMachineId}`,
     buildFetcher(new PublicKey(candyMachineId), connection),
   );

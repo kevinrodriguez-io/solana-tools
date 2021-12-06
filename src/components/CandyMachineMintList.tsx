@@ -108,7 +108,7 @@ export const CandyMachineMintList = ({
             className="text-pink-700 hover:text-pink-500 cursor-pointer"
             href={holdersDownloadString}
             rel="noopener noreferrer"
-            download={`${candyMachinePrimaryKey}-holders.json`}
+            download={`${candyMachinePrimaryKey}-mints.json`}
             target="_blank"
           >
             Download JSON Snapshot

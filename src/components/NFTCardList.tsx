@@ -1,4 +1,4 @@
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { useConnection } from '@solana/wallet-adapter-react';
 import { useRandropper } from 'context/RandropperContext';
 import { useNFTs } from 'hooks/useNFTs';
 import { trimString } from 'lib/string/trimString';
@@ -6,11 +6,17 @@ import { FC, useEffect, useState } from 'react';
 import { NFTCard } from './NFTCard';
 import { Skeleton } from './Skeleton';
 import cx from 'classnames';
+import { PublicKey } from '@solana/web3.js';
 
-export const NFTCardList: FC<{ limitHeight?: boolean }> = ({
+type NFTCardListProps = {
+  limitHeight?: boolean;
+  publicKey: PublicKey | null;
+};
+
+export const NFTCardList: FC<NFTCardListProps> = ({
   limitHeight = false,
+  publicKey,
 }) => {
-  const { publicKey } = useWallet();
   const { connection } = useConnection();
   const { data, error } = useNFTs(publicKey!, connection);
   const [randropper, setRandropper] = useRandropper();
