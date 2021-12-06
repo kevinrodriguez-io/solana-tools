@@ -1,5 +1,5 @@
 import { SearchIcon } from '@heroicons/react/solid';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { LabelledInput } from 'components/LabelledInput';
 import { Shell } from 'components/layouts/Shell';
 import { NFTCardList } from 'components/NFTCardList';
@@ -7,8 +7,13 @@ import { RoundButton } from 'components/RoundButton';
 import { Skeleton } from 'components/Skeleton';
 import { Terminal } from 'components/Terminal';
 import { RandropperProvider } from 'context/RandropperContext';
+import { useNFTs } from 'hooks/useNFTs';
+import { PairInformation, sendPairItem } from 'lib/randropper/distributor';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Subject } from 'rxjs';
+import pLimit from 'p-limit';
+
+const limit = pLimit(10);
 
 export const TransferAll = () => {
   const { connecting, disconnecting, connected } = useWallet();
@@ -29,8 +34,11 @@ export const TransferAll = () => {
 };
 
 const TransferAllContent = () => {
-  const { publicKey } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
+  const { connection } = useConnection();
   const [destinationWallet, setDestinationWallet] = useState('');
+  const { data: nfts } = useNFTs(publicKey!, connection);
+
   //#region Logger
   const logger = useMemo(() => new Subject<string>(), []);
   const logBox = useRef<HTMLPreElement>(null!);
@@ -46,7 +54,51 @@ const TransferAllContent = () => {
   }, [logger]);
   //#endregion
 
-  const handleSubmit = () => {};
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const pairs: PairInformation[] = nfts!.map((nft, i) => ({
+      id: i.toString(),
+      destinationWallet,
+      error: null,
+      mint: nft.attachedMetadata.data.mint,
+      state: 'pending',
+      txId: null,
+    }));
+    const promises = pairs.map((pair) =>
+      limit(() =>
+        sendPairItem(
+          pair,
+          {
+            connection,
+            sendTransaction,
+            walletPublicKey: publicKey!,
+          },
+          logger,
+        ),
+      ),
+    );
+    const results = await Promise.allSettled(promises);
+    // Update the state of the pairs
+    const updatedPairs = pairs.map((pair, i) => {
+      const result = results[i];
+      if (result.status === 'fulfilled') {
+        return {
+          ...pair,
+          state: 'success',
+          txId: result.value.txId,
+        };
+      } else {
+        return {
+          ...pair,
+          state: 'failure',
+          error: result.reason.message,
+        };
+      }
+    });
+    setJournal(
+      (journal) => `${journal}${JSON.stringify(updatedPairs, null, 2)}\n`,
+    );
+  };
 
   return (
     <Shell title="NFTs">
@@ -56,8 +108,33 @@ const TransferAllContent = () => {
           Transfer All NFTs To Wallet Address
         </h2>
         <div className="text-gray-700 text-xs my-4">
-          🚨 Be careful! This will transfer all NFTs to the wallet address. I'm
-          no responsible for any loss.
+          <ul>
+            <li>
+              - <b>Be careful! 🚨</b> This will transfer all NFTs to the wallet
+              address.
+            </li>
+            <li>
+              - I'm no responsible for any loss. The only reason I built this is
+              to ease some of the pain of manually transferring a big number of
+              NFTs.
+            </li>
+            <li>
+              - Extremely fast. 🚀 It parallelizes the transfers at 10tx at the
+              same time by default.
+            </li>
+            <li>
+              - This is a beta feature. 🚧 I expect bugs. Some Txs fail, so be
+              sure to refresh the page if you see a failure and try again.
+            </li>
+            <li>
+              - Due to random conditions on the Solana blockchain, transactions
+              may fail. Refer to the logs for more information.
+            </li>
+            <li>
+              - Use this at your own risk. 💀, I am not responsible for any
+              loss.
+            </li>
+          </ul>
         </div>
         <form onSubmit={handleSubmit} method="post">
           <div className="flex flex-row items-end">

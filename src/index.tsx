@@ -1,6 +1,5 @@
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { HomeView } from 'views/home';
 
 import {
   ConnectionProvider,
@@ -51,7 +50,8 @@ const App = () => {
         <WalletModalProvider>
           <Router>
             <Routes>
-              <Route path="/" element={<HomeView />} />
+              {/* <Route path="/" element={<HomeView />} /> */}
+              <Route path="/" element={<HolderList />} />
               <Route path="/grind-key" element={<GrindKey />} />
               <Route
                 path="/candy-machine/holder-list"

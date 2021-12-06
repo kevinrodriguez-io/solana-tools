@@ -5,33 +5,15 @@ import { useNFTs } from 'hooks/useNFTs';
 import { Skeleton } from './Skeleton';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from './Button';
-import { Connection, PublicKey, Transaction } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { DistributionItem } from './DistributionItem';
 import { Subject } from 'rxjs';
 import { Terminal } from './Terminal';
 import { useLocalStorage } from 'hooks/useLocalStorage';
-import * as SPLToken from '@solana/spl-token';
-import { getOrCreateAssociatedAccountInfoWithWallet } from 'lib/solana/getOrCreateAssociatedTokenAccount';
-
-export type PairTransactionState =
-  | 'pending'
-  | 'processing'
-  | 'success'
-  | 'error'
-  | 'weird';
-
-export type PairInformation = {
-  id: string;
-  mint: string;
-  winnerWallet: string;
-  txId: string | null;
-  state: PairTransactionState;
-  error: string | null;
-};
+import { PairInformation, sendPairItem } from 'lib/randropper/distributor';
 
 export type Pairs = Record<string, PairInformation>;
 export type PairsSetter = (value: Pairs | ((val: Pairs) => Pairs)) => void;
-type SendTransaction = ReturnType<typeof useWallet>['sendTransaction'];
 
 export class TransactionError extends Error {
   public pair: PairInformation;
@@ -46,74 +28,6 @@ export class TransactionError extends Error {
     typeof error?.pair?.mint === 'string' &&
     typeof error?.pair?.winnerWallet === 'string';
 }
-
-export const sendPairItem = async (
-  pair: PairInformation,
-  setPairs: PairsSetter,
-  {
-    walletPublicKey,
-    connection,
-    sendTransaction,
-  }: {
-    walletPublicKey: PublicKey;
-    connection: Connection;
-    sendTransaction: SendTransaction;
-  },
-  logger: Subject<string>,
-) => {
-  const { mint, winnerWallet } = pair;
-  logger.next(`Sending Pair ${mint} - ${winnerWallet}.`);
-  const token = new SPLToken.Token(
-    connection,
-    new PublicKey(mint),
-    SPLToken.TOKEN_PROGRAM_ID,
-    {
-      publicKey: walletPublicKey,
-      secretKey: new Uint8Array(0), // Disregard this, in fact it should be nullable.
-    },
-  );
-
-  logger.next(`Get/Create ATA for ${walletPublicKey.toBase58()}.`);
-  const source = await getOrCreateAssociatedAccountInfoWithWallet(
-    connection,
-    sendTransaction,
-    {
-      address: walletPublicKey,
-      payer: walletPublicKey,
-      token,
-    },
-  );
-
-  logger.next(`Get/Create ATA for ${winnerWallet!}.`);
-  const destination = await getOrCreateAssociatedAccountInfoWithWallet(
-    connection,
-    sendTransaction,
-    {
-      address: new PublicKey(winnerWallet),
-      payer: walletPublicKey!,
-      token,
-    },
-  );
-
-  const transferInstruction = SPLToken.Token.createTransferInstruction(
-    SPLToken.TOKEN_PROGRAM_ID,
-    source.address,
-    destination.address,
-    walletPublicKey!,
-    [],
-    1,
-  );
-
-  const recentBlockhash = await connection.getRecentBlockhash();
-  const transaction = new Transaction({
-    feePayer: walletPublicKey!,
-    recentBlockhash: recentBlockhash.blockhash,
-  }).add(transferInstruction);
-
-  const signature = await sendTransaction(transaction, connection);
-  logger.next(`Pair ${mint} - ${winnerWallet} sent.`);
-  return { ...pair, txId: signature, state: 'success' } as PairInformation;
-};
 
 export const Distributor = () => {
   const { candyMachinePrimaryKey } = useRandropper()[0];
@@ -208,7 +122,6 @@ export const Distributor = () => {
         }));
         const result = await sendPairItem(
           pair,
-          setPairs,
           { connection, sendTransaction, walletPublicKey: publicKey! },
           logger,
         );
@@ -307,9 +220,9 @@ export const Distributor = () => {
               <DistributionItem
                 key={pair.id}
                 pair={pair}
+                setPairs={setPairs}
                 nftMetadata={matchingNFTItem?.attachedMetadata}
                 pairs={pairs}
-                setPairs={setPairs}
                 logger={logger}
               />
             ),

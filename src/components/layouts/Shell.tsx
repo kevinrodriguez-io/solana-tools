@@ -29,13 +29,13 @@ const navigation = [
     current: false,
   },
   {
-    name: 'Look for wallet NFTs',
+    name: 'Look at wallet NFTs',
     href: '/nfts/lookup-form',
     icon: EyeIcon,
     current: false,
   },
   {
-    name: 'Transfer All',
+    name: 'Transfer All NFTs',
     href: '/nfts/transfer-all',
     icon: FireIcon,
     current: false,
@@ -47,7 +47,7 @@ const navigation = [
     current: false,
   },
   { name: 'Grind Key', href: '/grind-key', icon: CogIcon, current: false },
-  { name: 'Randropper', href: '/', icon: VariableIcon, current: false },
+  // { name: 'Randropper', href: '/', icon: VariableIcon, current: false },
 ];
 
 export const Shell: FC<{ title: string }> = ({ children, title }) => {
