@@ -14,7 +14,7 @@ export type PairTransactionState =
 export type PairInformation = {
   id: string;
   mint: string;
-  destinationWallet: string;
+  winnerWallet: string;
   txId: string | null;
   state: PairTransactionState;
   error: string | null;
@@ -33,7 +33,7 @@ export const sendPairItem = async (
   { walletPublicKey, connection, sendTransaction }: SendPairItemConfig,
   logger?: Subject<string>,
 ) => {
-  const { mint, destinationWallet } = pair;
+  const { mint, winnerWallet: destinationWallet } = pair;
   logger?.next(`[${pair.id}] - Sending Pair ${mint} - ${destinationWallet}.`);
   const token = new SPLToken.Token(
     connection,

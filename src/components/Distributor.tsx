@@ -80,7 +80,7 @@ export const Distributor = () => {
             ),
           });
           shufflerWorker.onmessage = (event) => {
-            if (event.data.type === 'error') {
+            if (event.data.type === 'ERROR') {
               reject(event.data.error);
             } else {
               resolve(event.data.pairs);

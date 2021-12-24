@@ -11,7 +11,11 @@ import { RoundButton } from './RoundButton';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { Subject } from 'rxjs';
 import { Metadata } from '@metaplex/js/lib/programs/metadata';
-import { PairInformation, PairTransactionState, sendPairItem } from 'lib/randropper/distributor';
+import {
+  PairInformation,
+  PairTransactionState,
+  sendPairItem,
+} from 'lib/randropper/distributor';
 
 const getTxStateBgColor = (txState: PairTransactionState) => {
   switch (txState) {
@@ -42,7 +46,8 @@ export const DistributionItem: FC<DistributionItemProps> = ({
   setPairs,
   logger,
 }) => {
-  const { id, mint, state, txId, destinationWallet: winnerWallet } = pair;
+  const { id, mint, state, txId, winnerWallet } = pair;
+  console.log({ pair });
   const { data, error } = useSWR(
     nftMetadata?.data?.data?.uri ?? 'NOT_FOUND',
     (uri: string) => {

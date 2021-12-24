@@ -26,15 +26,12 @@ import { ListNFTs } from 'views/nfts';
 import { MintList } from 'views/candy-machine/MintList';
 import { LookAtWallet } from 'views/nfts/LookAtWallet';
 import { TransferAll } from 'views/nfts/TransferAll';
+import { HomeView } from 'views/home';
 
-const RPC_ENDPOINT = 'https://solana-mainnet.phantom.tech/';
-// const RPC_ENDPOINT = 'https://rpc-mainnet-oiwy5uyn6a-ue.a.run.app';
+const RPC_ENDPOINT = 'https://cmnftdrop7299eedc071c.genesysgo.net/';
 
 const App = () => {
   const network = WalletAdapterNetwork.Mainnet;
-
-  // const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-
   const wallets = useMemo(
     () => [
       getSlopeWallet(),
@@ -52,8 +49,8 @@ const App = () => {
         <WalletModalProvider>
           <Router>
             <Routes>
-              {/* <Route path="/" element={<HomeView />} /> */}
-              <Route path="/" element={<HolderList />} />
+              <Route path="/" element={<HomeView />} />
+              {/* <Route path="/" element={<HolderList />} /> */}
               <Route path="/grind-key" element={<GrindKey />} />
               <Route
                 path="/candy-machine/holder-list"

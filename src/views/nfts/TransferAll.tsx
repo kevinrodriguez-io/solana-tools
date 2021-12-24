@@ -58,7 +58,7 @@ const TransferAllContent = () => {
     e.preventDefault();
     const pairs: PairInformation[] = nfts!.map((nft, i) => ({
       id: i.toString(),
-      destinationWallet,
+      winnerWallet: destinationWallet,
       error: null,
       mint: nft.attachedMetadata.data.mint,
       state: 'pending',

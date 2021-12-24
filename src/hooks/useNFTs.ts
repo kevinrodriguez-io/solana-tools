@@ -32,7 +32,6 @@ const buildFetcher =
             pda,
             metadataAccountInfo!,
           );
-          console.log({ attachedMetadata });
           return { nftToken, attachedMetadata };
         }),
       ),
