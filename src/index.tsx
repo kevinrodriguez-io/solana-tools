@@ -10,6 +10,7 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import {
   getLedgerWallet,
   getPhantomWallet,
+  getSlopeWallet,
   getSolflareWallet,
   getSolletExtensionWallet,
   getSolletWallet,
@@ -22,19 +23,16 @@ import './index.css';
 import { useMemo } from 'react';
 import { GrindKey } from 'views/grindKey';
 
-const RPC_ENDPOINT = 'https://cmnftdrop7299eedc071c.genesysgo.net/';
-// const RPC_ENDPOINT = 'https://rpc-mainnet-oiwy5uyn6a-ue.a.run.app';
+const RPC_ENDPOINT = 'https://ssc-dao.genesysgo.net/';
 
 const App = () => {
   const network = WalletAdapterNetwork.Mainnet;
-
-  // const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-
   const wallets = useMemo(
     () => [
       getPhantomWallet(),
       getSolflareWallet(),
       getLedgerWallet(),
+      getSlopeWallet(),
       getSolletWallet({ network }),
       getSolletExtensionWallet({ network }),
     ],
