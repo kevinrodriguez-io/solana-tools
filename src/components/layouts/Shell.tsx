@@ -2,16 +2,51 @@ import { FC, Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import {
   MenuAlt2Icon,
-  VariableIcon,
   XIcon,
   CogIcon,
+  CakeIcon,
+  InformationCircleIcon,
+  MusicNoteIcon,
+  EyeIcon,
+  FireIcon,
 } from '@heroicons/react/outline';
 import classNames from 'classnames';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Link } from 'react-router-dom';
 
 const navigation = [
-  { name: 'Randropper', href: '/', icon: VariableIcon, current: false },
+  {
+    name: 'Candy Machine Holder List',
+    href: '/candy-machine/holder-list',
+    icon: CakeIcon,
+    current: false,
+  },
+  {
+    name: 'Candy Machine Mints',
+    href: '/candy-machine/mints',
+    icon: MusicNoteIcon,
+    current: false,
+  },
+  {
+    name: 'Look at wallet NFTs',
+    href: '/nfts/lookup-form',
+    icon: EyeIcon,
+    current: false,
+  },
+  {
+    name: 'Transfer All NFTs',
+    href: '/nfts/transfer-all',
+    icon: FireIcon,
+    current: false,
+  },
+  {
+    name: 'My NFTs',
+    href: '/nfts',
+    icon: InformationCircleIcon,
+    current: false,
+  },
   { name: 'Grind Key', href: '/grind-key', icon: CogIcon, current: false },
+  // { name: 'Randropper', href: '/', icon: VariableIcon, current: false },
 ];
 
 export const Shell: FC<{ title: string }> = ({ children, title }) => {
@@ -72,15 +107,15 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
                 </Transition.Child>
                 <div className="flex-shrink-0 flex items-center px-4">
                   <p className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-400 to-purple-600">
-                    Solana Moon Box
+                    Solana Tools 🛠
                   </p>
                 </div>
                 <div className="mt-5 flex-1 h-0 overflow-y-auto">
                   <nav className="px-2 space-y-1">
                     {navigation.map((item) => (
-                      <a
+                      <Link
                         key={item.name}
-                        href={item.href}
+                        to={item.href}
                         className={classNames(
                           item.current
                             ? 'bg-gray-900 text-white'
@@ -98,7 +133,7 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
                           aria-hidden="true"
                         />
                         {item.name}
-                      </a>
+                      </Link>
                     ))}
                   </nav>
                 </div>
@@ -116,15 +151,15 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
           <div className="flex-1 flex flex-col min-h-0 bg-gray-800">
             <div className="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900">
               <p className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-400 to-purple-600">
-                Solana Moon Box
+                Solana Tools 🛠
               </p>
             </div>
             <div className="flex-1 flex flex-col overflow-y-auto">
               <nav className="flex-1 px-2 py-4 space-y-1">
                 {navigation.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
-                    href={item.href}
+                    to={item.href}
                     className={classNames(
                       item.current
                         ? 'bg-gray-900 text-white'
@@ -142,7 +177,7 @@ export const Shell: FC<{ title: string }> = ({ children, title }) => {
                       aria-hidden="true"
                     />
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </nav>
             </div>

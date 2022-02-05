@@ -1,6 +1,5 @@
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { HomeView } from 'views/home';
 
 import {
   ConnectionProvider,
@@ -14,6 +13,7 @@ import {
   getSolflareWallet,
   getSolletExtensionWallet,
   getSolletWallet,
+  getSlopeWallet,
 } from '@solana/wallet-adapter-wallets';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 // import { clusterApiUrl } from '@solana/web3.js';
@@ -21,7 +21,13 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import '@solana/wallet-adapter-react-ui/styles.css';
 import './index.css';
 import { useMemo } from 'react';
-import { GrindKey } from 'views/grindKey';
+import { GrindKey } from 'views/grind-key';
+import { HolderList } from 'views/candy-machine/HolderList';
+import { ListNFTs } from 'views/nfts';
+import { MintList } from 'views/candy-machine/MintList';
+import { LookAtWallet } from 'views/nfts/LookAtWallet';
+import { TransferAll } from 'views/nfts/TransferAll';
+import { HomeView } from 'views/home';
 
 const RPC_ENDPOINT = 'https://ssc-dao.genesysgo.net/';
 
@@ -29,6 +35,7 @@ const App = () => {
   const network = WalletAdapterNetwork.Mainnet;
   const wallets = useMemo(
     () => [
+      getSlopeWallet(),
       getPhantomWallet(),
       getSolflareWallet(),
       getLedgerWallet(),
@@ -45,7 +52,20 @@ const App = () => {
           <Router>
             <Routes>
               <Route path="/" element={<HomeView />} />
+              {/* <Route path="/" element={<HolderList />} /> */}
               <Route path="/grind-key" element={<GrindKey />} />
+              <Route
+                path="/candy-machine/holder-list"
+                element={<HolderList />}
+              />
+              <Route path="/candy-machine/mints" element={<MintList />} />
+              <Route path="/nfts/lookup-form" element={<LookAtWallet />} />
+              <Route path="/nfts/transfer-all" element={<TransferAll />} />
+              <Route
+                path="/nfts/lookup-form/:walletId"
+                element={<LookAtWallet />}
+              />
+              <Route path="/nfts" element={<ListNFTs />} />
             </Routes>
           </Router>
         </WalletModalProvider>

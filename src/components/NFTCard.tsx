@@ -1,11 +1,11 @@
+import { MetadataDataData } from '@metaplex/js/lib/programs/metadata';
 import axios from 'axios';
 import { TokenMetadataType } from 'lib/metaplex-sdk/tokenMetadataType';
-import { Data } from 'lib/metaplex-sdk/types';
 import useSWR from 'swr';
 import { Skeleton } from './Skeleton';
 
 export type NFTCardProps = {
-  nftData: Data;
+  nftData: MetadataDataData;
 };
 
 export const NFTCard = ({ nftData }: NFTCardProps) => {
