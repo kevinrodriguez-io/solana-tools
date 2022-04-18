@@ -1,0 +1,10 @@
+query getHolderSnapshot($creator: PublicKey!) {
+  nfts(creators: [$creator], limit: 15000, offset: 0) {
+    mint_account: mintAddress
+    name
+    owner {
+      twitterHandle
+      address
+    }
+  }
+}

@@ -1,0 +1,9 @@
+overwrite: true
+schema: "https://graphql.holaplex.tools/v1"
+documents: "src/lib/graphql/**/*.graphql"
+generates:
+  src/lib/graphql/sdk.tsx:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-react-apollo"
